@@ -67,8 +67,14 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
 
     const toggleMic = () => {
         if (status === 'listening') {
+            const finalTranscript = transcriptRef.current;
             recognitionRef.current?.stop();
-            setStatus('idle');
+
+            if (finalTranscript.trim()) {
+                handleVoiceSuccess(finalTranscript);
+            } else {
+                setStatus('idle');
+            }
         } else {
             startListening();
         }
