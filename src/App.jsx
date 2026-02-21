@@ -204,20 +204,32 @@ function App() {
         )}
       </AnimatePresence>
 
-      <main className="main-content">
-        <div className="topbar">
-          {user && !sidebarOpen && (
-            <motion.button
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="icon-btn topbar-btn"
-              onClick={() => setSidebarOpen(true)}
-              title="Kenar Çubuğunu Aç"
-            >
-              <PanelLeft size={18} />
-            </motion.button>
-          )}
+      {/* FIXED Sidebar Toggle - Outside main-content to avoid resizing jitter */}
+      <AnimatePresence>
+        {user && !sidebarOpen && (
+          <motion.button
+            key="sidebar-toggle-fixed"
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            transition={{
+              delay: 0.5, // 0.5s magic delay
+              duration: 0.3,
+              type: 'spring',
+              damping: 15
+            }}
+            className="icon-btn topbar-btn sidebar-toggle-fixed"
+            onClick={() => setSidebarOpen(true)}
+            title="Kenar Çubuğunu Aç"
+          >
+            <PanelLeft size={20} />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
+      <main className="main-content">
+        {/* Top bar (Right side actions only) */}
+        <div className="topbar">
           <div className="topbar-right">
             {isIncognito && (
               <span className="incognito-badge">
@@ -231,9 +243,9 @@ function App() {
                 title={isIncognito && messages.length > 0 ? "Yeni Normal Sohbet" : (isIncognito ? "Normal Moda Dön" : "Geçici Sohbet")}
               >
                 {isIncognito && messages.length > 0 ? (
-                  <MessageCirclePlus size={20} />
+                  <MessageCirclePlus size={22} />
                 ) : (
-                  <MessageCircleDashed size={20} />
+                  <MessageCircleDashed size={22} />
                 )}
               </button>
             )}

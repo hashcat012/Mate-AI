@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Save, Trash2, LogOut, Sparkles, ChevronRight } from 'lucide-react';
+import { X, User, Save, Trash2, LogOut, Sparkles, Send } from 'lucide-react';
 import { updateProfile, deleteUser, signOut } from 'firebase/auth';
 
 const personas = [
@@ -20,12 +20,10 @@ const Profile = ({ user, currentPersona, onSavePersona, onClose }) => {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // 1. Update Display Name
             if (displayName !== user.displayName) {
                 await updateProfile(user, { displayName });
             }
 
-            // 2. Prepare Persona Data
             let personaData;
             if (selectedPersona === 'custom') {
                 personaData = { id: 'custom', name: 'Özel', prompt: customPrompt };
@@ -58,9 +56,9 @@ const Profile = ({ user, currentPersona, onSavePersona, onClose }) => {
     return (
         <div className="auth-overlay">
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
                 className="profile-modal liquid-glass"
             >
                 <div className="profile-modal-header">
@@ -99,37 +97,34 @@ const Profile = ({ user, currentPersona, onSavePersona, onClose }) => {
                                     </div>
                                 </button>
                             ))}
-                            <button
-                                className={`persona-card ${selectedPersona === 'custom' ? 'active' : ''}`}
-                                onClick={() => setSelectedPersona('custom')}
-                            >
-                                <span className="p-name">Özel (Kendi Yazdığın)</span>
-                            </button>
                         </div>
 
-                        <AnimatePresence>
-                            {selectedPersona === 'custom' && (
-                                <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    className="custom-prompt-container"
-                                >
-                                    <textarea
-                                        placeholder="AI nasıl davranmalı? (Örn: Sen bir yemek şefisin...)"
-                                        value={customPrompt}
-                                        onChange={(e) => setCustomPrompt(e.target.value)}
-                                    />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                        {/* Custom Persona Area (Prompt Bar style) */}
+                        <div className="custom-persona-wrapper">
+                            <div className={`custom-persona-input-container ${selectedPersona === 'custom' ? 'active' : ''}`}>
+                                <textarea
+                                    className="custom-persona-textarea"
+                                    placeholder="Özel kişilik ayarla... (Örn: Sen bir tarih profesörüsün)"
+                                    value={customPrompt}
+                                    onChange={(e) => {
+                                        setCustomPrompt(e.target.value);
+                                        setSelectedPersona('custom');
+                                    }}
+                                />
+                                <div className="custom-persona-action">
+                                    <div className={`persona-type-badge ${selectedPersona === 'custom' ? 'visible' : ''}`}>
+                                        <Sparkles size={12} /> Özel Mod
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Aksiyon Butonları */}
                     <div className="profile-actions">
                         <button className="sign-in-btn save-profile-btn" onClick={handleSave} disabled={isSaving}>
                             <Save size={18} />
-                            <span>{isSaving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}</span>
+                            <span>{isSaving ? 'Kaydediliyor...' : 'Ayarları Uygula'}</span>
                         </button>
 
                         <div className="danger-zone">

@@ -90,6 +90,16 @@
   border-color: rgba(139, 92, 246, 0.3);
 }
 
+.sidebar-toggle-fixed {
+  position: fixed !important;
+  left: 32px;
+  top: 32px;
+  z-index: 2000;
+  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+}
+
 .ghost-btn {
   background: transparent !important;
   border: none !important;

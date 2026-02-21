@@ -72,15 +72,8 @@
 }
 
 .persona-card.active {
-    background: rgba(139, 92, 246, 0.15);
+    background: rgba(139, 92, 246, 0.12);
     border-color: rgba(139, 92, 246, 0.4);
-}
-
-.persona-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
 }
 
 .p-name {
@@ -97,27 +90,64 @@
     color: #a78bfa;
 }
 
-.custom-prompt-container {
-    margin-top: 12px;
-    overflow: hidden;
+/* Custom Persona Area - Prompt Bar Style */
+.custom-persona-wrapper {
+    margin-top: 8px;
 }
 
-.custom-prompt-container textarea {
-    width: 100%;
-    min-height: 100px;
-    background: rgba(0, 0, 0, 0.2);
+.custom-persona-input-container {
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 12px;
+    border-radius: 20px;
+    padding: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.custom-persona-input-container.active {
+    background: rgba(139, 92, 246, 0.05);
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+}
+
+.custom-persona-textarea {
+    width: 100%;
+    min-height: 80px;
+    background: transparent;
+    border: none;
     color: white;
     font-family: inherit;
-    font-size: 0.85rem;
-    resize: vertical;
+    font-size: 0.9rem;
+    resize: none;
     outline: none;
+    line-height: 1.5;
 }
 
-.custom-prompt-container textarea:focus {
-    border-color: rgba(139, 92, 246, 0.5);
+.custom-persona-action {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.persona-type-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: #a78bfa;
+    background: rgba(139, 92, 246, 0.15);
+    padding: 4px 12px;
+    border-radius: 99px;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: all 0.3s;
+}
+
+.persona-type-badge.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .profile-actions {
@@ -160,8 +190,8 @@
 }
 
 .danger-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: white;
+    background: rgba(239, 68, 68, 0.05);
+    color: #ef4444;
 }
 
 .danger-btn.delete {
@@ -182,6 +212,6 @@
 }
 
 .profile-scroll-area::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 10px;
 }
