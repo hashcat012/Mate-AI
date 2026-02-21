@@ -82,9 +82,9 @@
 }
 
 .mic-toggle {
-    width: 64px;
-    height: 64px;
-    background: rgba(255, 255, 255, 0.05);
+    min-width: 140px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.1);
     border: 1px solid var(--border-glass);
     color: white;
     display: flex;
@@ -92,9 +92,40 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s;
+    font-weight: 500;
+    font-size: 1.1rem;
+    padding: 0 32px;
+    border-radius: 99px;
 }
 
 .mic-toggle.active {
-    background: white;
-    color: black;
+    background: #ff4444;
+    color: white;
+    border-color: #ff4444;
+    box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
+}
+
+.error-text {
+    color: #ff4444 !important;
+}
+
+.pulse-icon {
+    animation: voice-pulse 1.5s infinite;
+}
+
+@keyframes voice-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.15);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }

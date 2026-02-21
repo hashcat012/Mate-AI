@@ -166,6 +166,22 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    padding: 8px;
+    border-radius: 12px;
+    transition: background 0.2s;
+}
+
+.profile-section:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.settings-icon {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.profile-section:hover .settings-icon {
+    opacity: 1;
 }
 
 .avatar-wrapper {

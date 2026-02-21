@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
-import { MessageCircleDashed, PanelLeftOpen } from 'lucide-react';
+import { MessageCircleDashed, MessageCirclePlus, PanelLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import Chat from './components/Chat';
 import PromptBar from './components/PromptBar';
 import Auth from './components/Auth';
 import VoiceChat from './components/VoiceChat';
+import Profile from './components/Profile';
 import { getAICompletion } from './services/ai';
 import './App.css';
 import './components/Sidebar.css';
@@ -16,6 +17,7 @@ import './components/Chat.css';
 import './components/PromptBar.css';
 import './components/Auth.css';
 import './components/VoiceChat.css';
+import './components/Profile.css';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -24,8 +26,15 @@ function App() {
   const [isInitial, setIsInitial] = useState(true);
   const [voiceMode, setVoiceMode] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isIncognito, setIsIncognito] = useState(false);
+
+  // AI Persona state
+  const [persona, setPersona] = useState(() => {
+    const saved = localStorage.getItem('mate_ai_persona');
+    return saved ? JSON.parse(saved) : { id: 'normal', name: 'Normal', prompt: 'Sen yardımsever, zeki ve dürüst bir yapay zeka asistanısın.' };
+  });
 
   const chatIdRef = useRef(null);
   const messagesRef = useRef([]);
@@ -37,7 +46,6 @@ function App() {
       setUser(u);
       setLoading(false);
       if (!u) {
-        // On logout: reset everything
         resetChat();
         setIsIncognito(false);
       }
@@ -59,11 +67,11 @@ function App() {
     const isFirst = !chatIdRef.current && !isIncognito;
     const isFirstIncognito = !chatIdRef.current && isIncognito;
 
-    // Mark first message state
     if (isFirst || isFirstIncognito) setIsInitial(false);
 
-    // Build AI history snapshot
+    // Build AI history with PERSONA as system prompt
     const aiMessages = [
+      { role: 'system', content: persona.prompt },
       ...currentMessages.map(m => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text
@@ -71,14 +79,11 @@ function App() {
       { role: 'user', content: text }
     ];
 
-    // Add user message to UI
     setMessages(prev => [...prev, { text, sender: 'user', timestamp: new Date() }]);
 
-    // Call AI immediately
     const aiText = await getAICompletion(aiMessages).catch(e => "Hata: " + e.message);
     setMessages(prev => [...prev, { text: aiText, sender: 'ai', timestamp: new Date() }]);
 
-    // Save to Firestore only if NOT incognito
     if (!isIncognito) {
       saveToFirestore(isFirst, text, aiText, currentMessages);
     }
@@ -88,7 +93,6 @@ function App() {
     try {
       let currentChatId = chatIdRef.current;
       if (isFirst) {
-        // Generate title from AI
         const titleResponse = await getAICompletion([
           { role: 'system', content: 'Sadece 2-4 kelimelik kısa Türkçe bir başlık yaz. Başka hiçbir şey ekleme.' },
           { role: 'user', content: userText }
@@ -104,7 +108,6 @@ function App() {
         currentChatId = ref.id;
         chatIdRef.current = currentChatId;
       }
-      // Save all messages
       const allMsgs = [
         ...previousMessages,
         { text: userText, sender: 'user' },
@@ -127,10 +130,13 @@ function App() {
     }
     if (!userText) return;
     setMessages(prev => prev.filter((_, i) => i !== aiMsgIndex));
-    const history = msgs.slice(0, aiMsgIndex).map(m => ({
-      role: m.sender === 'user' ? 'user' : 'assistant',
-      content: m.text
-    }));
+    const history = [
+      { role: 'system', content: persona.prompt },
+      ...msgs.slice(0, aiMsgIndex).map(m => ({
+        role: m.sender === 'user' ? 'user' : 'assistant',
+        content: m.text
+      }))
+    ];
     const newAiText = await getAICompletion(history).catch(e => 'Hata: ' + e.message);
     setMessages(prev => {
       const updated = [...prev];
@@ -160,10 +166,26 @@ function App() {
   };
 
   const handleIncognito = () => {
-    chatIdRef.current = null;
-    setMessages([]);
-    setIsInitial(true);
-    setIsIncognito(true);
+    if (isIncognito) {
+      if (messages.length === 0) {
+        // Toggle back to normal if empty
+        handleNewChat();
+      } else {
+        // If has messages, create a NEW NORMAL chat (user request)
+        handleNewChat();
+      }
+    } else {
+      // Enter incognito
+      chatIdRef.current = null;
+      setMessages([]);
+      setIsInitial(true);
+      setIsIncognito(true);
+    }
+  };
+
+  const savePersona = (newPersona) => {
+    setPersona(newPersona);
+    localStorage.setItem('mate_ai_persona', JSON.stringify(newPersona));
   };
 
   if (loading) return <div className="loading-screen">Mate AI</div>;
@@ -177,12 +199,12 @@ function App() {
             onNewChat={handleNewChat}
             onSelectChat={handleSelectChat}
             onClose={() => setSidebarOpen(false)}
+            onProfileClick={() => setShowProfile(true)}
           />
         )}
       </AnimatePresence>
 
       <main className="main-content">
-        {/* Top bar */}
         <div className="topbar">
           {user && !sidebarOpen && (
             <motion.button
@@ -192,7 +214,7 @@ function App() {
               onClick={() => setSidebarOpen(true)}
               title="Kenar Çubuğunu Aç"
             >
-              <PanelLeftOpen size={18} />
+              <PanelLeft size={18} />
             </motion.button>
           )}
 
@@ -204,25 +226,41 @@ function App() {
             )}
             {user && (
               <button
-                className={`icon-btn topbar-btn ${isIncognito ? 'active' : ''}`}
+                className={`icon-btn topbar-btn ghost-btn ${isIncognito ? 'active' : ''}`}
                 onClick={handleIncognito}
-                title="Geçici Sohbet (Kaydolmaz)"
+                title={isIncognito && messages.length > 0 ? "Yeni Normal Sohbet" : (isIncognito ? "Normal Moda Dön" : "Geçici Sohbet")}
               >
-                <MessageCircleDashed size={18} />
+                {isIncognito && messages.length > 0 ? (
+                  <MessageCirclePlus size={20} />
+                ) : (
+                  <MessageCircleDashed size={20} />
+                )}
               </button>
             )}
             {!user && (
               <button className="sign-in-btn" onClick={() => setShowAuth(true)}>
-                Giriş Yap
+                Sign In
               </button>
             )}
           </div>
         </div>
 
         {showAuth && !user && <Auth onClose={() => setShowAuth(false)} />}
+
+        <AnimatePresence>
+          {showProfile && user && (
+            <Profile
+              user={user}
+              currentPersona={persona}
+              onSavePersona={savePersona}
+              onClose={() => setShowProfile(false)}
+            />
+          )}
+        </AnimatePresence>
+
         <Chat messages={messages} isInitial={isInitial} onRegenerate={handleRegenerate} />
         <PromptBar onSend={handleSendMessage} isInitial={isInitial} setVoiceMode={setVoiceMode} />
-        {voiceMode && <VoiceChat onClose={() => setVoiceMode(false)} />}
+        {voiceMode && <VoiceChat onSend={handleSendMessage} onClose={() => setVoiceMode(false)} />}
       </main>
     </div>
   );

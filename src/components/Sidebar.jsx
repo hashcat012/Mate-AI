@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, User, LogOut, MoreVertical, Trash2, Edit2, Pin, X, PanelLeftClose } from 'lucide-react';
+import { Plus, User, LogOut, MoreVertical, Trash2, Edit2, Pin, X, PanelLeft, Settings } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { collection, query, onSnapshot, deleteDoc, updateDoc, doc, where } from 'firebase/firestore';
 
-const Sidebar = ({ user, onNewChat, onSelectChat, onClose }) => {
+const Sidebar = ({ user, onNewChat, onSelectChat, onClose, onProfileClick }) => {
     const [chats, setChats] = useState([]);
     const [activeMenu, setActiveMenu] = useState(null);
     const [editingId, setEditingId] = useState(null);
@@ -99,7 +99,7 @@ const Sidebar = ({ user, onNewChat, onSelectChat, onClose }) => {
                         <Plus size={18} />
                     </button>
                     <button className="icon-btn" onClick={() => onClose?.()} title="Kenar Çubuğunu Kapat">
-                        <PanelLeftClose size={18} />
+                        <PanelLeft size={18} />
                     </button>
                 </div>
             </div>
@@ -176,7 +176,7 @@ const Sidebar = ({ user, onNewChat, onSelectChat, onClose }) => {
 
             {/* Footer */}
             <div className="sidebar-footer">
-                <div className="profile-section">
+                <div className="profile-section" onClick={onProfileClick} style={{ cursor: 'pointer' }}>
                     <div className="avatar-wrapper">
                         {user.photoURL ? (
                             <img src={user.photoURL} alt="profile" referrerPolicy="no-referrer" />
@@ -188,11 +188,11 @@ const Sidebar = ({ user, onNewChat, onSelectChat, onClose }) => {
                     </div>
                     <div className="profile-info">
                         <span className="username">{user.displayName || user.email?.split('@')[0]}</span>
-                        <span className="plan">Ücretsiz Plan</span>
+                        <span className="plan">Ayarları Düzenle</span>
                     </div>
-                    <button className="logout-btn" onClick={handleLogout} title="Çıkış Yap">
-                        <LogOut size={16} />
-                    </button>
+                    <div className="settings-icon">
+                        <Settings size={16} color="rgba(255,255,255,0.4)" />
+                    </div>
                 </div>
             </div>
         </motion.aside>

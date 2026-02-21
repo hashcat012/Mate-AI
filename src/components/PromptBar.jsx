@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, ArrowUp } from 'lucide-react';
+import { Plus, ArrowUp, AudioLines } from 'lucide-react';
 
 const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
     const [input, setInput] = useState('');
@@ -90,11 +90,7 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
                                     className="white-circle-inside"
                                     onClick={() => setVoiceMode(true)}
                                 >
-                                    <div className="voice-icon-custom small">
-                                        <span className="side-bar">ı</span>
-                                        <span className="middle-bar">|</span>
-                                        <span className="side-bar">ı</span>
-                                    </div>
+                                    <AudioLines size={20} color="black" />
                                 </motion.button>
                             ) : (
                                 <motion.button
