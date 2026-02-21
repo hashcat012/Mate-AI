@@ -168,12 +168,13 @@
     .sidebar {
         margin: 0;
         height: 100%;
-        width: 100% !important;
+        width: 85% !important;
         position: fixed;
         top: 0;
         left: 0;
         z-index: 3000;
         border-radius: 0;
+        box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
     }
 
     .sidebar-header {
