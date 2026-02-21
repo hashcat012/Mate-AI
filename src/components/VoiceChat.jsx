@@ -13,6 +13,37 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
     const transcriptRef = useRef('');
     const isActiveRef = useRef(true);
     const isSpeakingRef = useRef(false);
+    const isProcessingRef = useRef(false);
+
+    //Consolidated Speech Function
+    const speakResponse = useCallback((text) => {
+        if (!isActiveRef.current) return;
+
+        window.speechSynthesis.cancel();
+        const speechFriendlyText = cleanForSpeech(text);
+        const utterance = new SpeechSynthesisUtterance(speechFriendlyText);
+        utterance.lang = language;
+        utterance.rate = 1.0;
+
+        utterance.onstart = () => {
+            isSpeakingRef.current = true;
+            setStatus('speaking');
+        };
+        utterance.onend = () => {
+            isSpeakingRef.current = false;
+            isProcessingRef.current = false;
+            setStatus('idle');
+            setTranscript('');
+            setAiResponse('');
+            transcriptRef.current = '';
+            setTimeout(() => {
+                if (isActiveRef.current && !isProcessingRef.current) {
+                    startListening();
+                }
+            }, 600);
+        };
+        window.speechSynthesis.speak(utterance);
+    }, [language, cleanForSpeech]);
 
     // Phonetic dictionary for correct English pronunciation with Turkish TTS voice
     const phoneticDictionary = {
@@ -82,12 +113,15 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
 
     // AI Processing logic
     const handleVoiceSuccess = useCallback(async (text) => {
+        if (isProcessingRef.current) return;
+
         const correctedText = correctTranscript(text);
         if (!correctedText.trim()) {
             setStatus('idle');
             return;
         }
 
+        isProcessingRef.current = true;
         setStatus('thinking');
         const history = [
             {
@@ -106,36 +140,14 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
             if (!isActiveRef.current) return;
             setAiResponse(aiText);
             onSend(correctedText, aiText);
-
-            // Speak response
-            const speechFriendlyText = cleanForSpeech(aiText);
-            const utterance = new SpeechSynthesisUtterance(speechFriendlyText);
-            utterance.lang = language;
-            utterance.rate = 1.0;
-
-            utterance.onstart = () => {
-                isSpeakingRef.current = true;
-                setStatus('speaking');
-            };
-            utterance.onend = () => {
-                isSpeakingRef.current = false;
-                setStatus('idle');
-                setTranscript('');
-                setAiResponse('');
-                transcriptRef.current = '';
-                setTimeout(() => {
-                    if (isActiveRef.current && status !== 'listening') {
-                        startListening();
-                    }
-                }, 500);
-            };
-            window.speechSynthesis.speak(utterance);
+            speakResponse(aiText);
         } catch (err) {
             console.error(err);
             setError("Hata: " + err.message);
+            isProcessingRef.current = false;
             setStatus('idle');
         }
-    }, [messages, persona, language, onSend]);
+    }, [messages, persona, language, onSend, speakResponse]);
 
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
