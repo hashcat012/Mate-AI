@@ -100,3 +100,37 @@
 .voice-icon-custom.small .middle-bar {
     font-size: 1.2rem;
 }
+
+/* Mobile Optimization — PromptBar */
+@media (max-width: 768px) {
+    .prompt-bar-outer-container {
+        padding: 0 12px 16px 12px;
+    }
+
+    .welcome-text-container h1 {
+        font-size: 1.6rem;
+    }
+
+    .prompt-controls-wrapper {
+        gap: 8px;
+    }
+
+    .white-circle-outside {
+        width: 44px;
+        height: 44px;
+    }
+
+    .prompt-form {
+        padding-left: 14px;
+        border-radius: 24px;
+    }
+
+    .prompt-form input {
+        font-size: 0.95rem;
+    }
+
+    .white-circle-inside {
+        width: 36px;
+        height: 36px;
+    }
+}

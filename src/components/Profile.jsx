@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Save, Trash2, LogOut, Sparkles, Send } from 'lucide-react';
+import { X, User, Save, Trash2, LogOut, Sparkles, Languages } from 'lucide-react';
 import { updateProfile, deleteUser, signOut } from 'firebase/auth';
 
 const personas = [
@@ -11,10 +11,18 @@ const personas = [
     { id: 'polite', name: 'Kibar & Yardımsever', prompt: 'Sen son derece kibar, nazik ve her zaman "efendim" diyen, çok yardımcı bir asistansın.' }
 ];
 
-const Profile = ({ user, currentPersona, onSavePersona, onClose }) => {
+const languages = [
+    { id: 'tr-TR', name: 'Türkçe', flag: '🇹🇷' },
+    { id: 'en-US', name: 'English', flag: '🇺🇸' },
+    { id: 'de-DE', name: 'Deutsch', flag: '🇩🇪' },
+    { id: 'fr-FR', name: 'Français', flag: '🇫🇷' }
+];
+
+const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClose }) => {
     const [displayName, setDisplayName] = useState(user?.displayName || '');
     const [selectedPersona, setSelectedPersona] = useState(currentPersona?.id || 'normal');
     const [customPrompt, setCustomPrompt] = useState(currentPersona?.id === 'custom' ? currentPersona.prompt : '');
+    const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage || 'tr-TR');
     const [isSaving, setIsSaving] = useState(false);
 
     const handleSave = async () => {
@@ -32,7 +40,7 @@ const Profile = ({ user, currentPersona, onSavePersona, onClose }) => {
                 personaData = p;
             }
 
-            onSavePersona(personaData);
+            onSaveSettings({ persona: personaData, language: selectedLanguage });
             onClose();
         } catch (e) {
             console.error(e);
@@ -67,7 +75,6 @@ const Profile = ({ user, currentPersona, onSavePersona, onClose }) => {
                 </div>
 
                 <div className="profile-scroll-area">
-                    {/* Ad Değiştirme */}
                     <div className="profile-section-group">
                         <label>Görünen Ad</label>
                         <div className="input-group">
@@ -81,7 +88,22 @@ const Profile = ({ user, currentPersona, onSavePersona, onClose }) => {
                         </div>
                     </div>
 
-                    {/* AI Kişilik Seçimi */}
+                    <div className="profile-section-group">
+                        <label>Dil Seçimi (Sesli & Yazılı)</label>
+                        <div className="language-grid">
+                            {languages.map((lang) => (
+                                <button
+                                    key={lang.id}
+                                    className={`lang-card ${selectedLanguage === lang.id ? 'active' : ''}`}
+                                    onClick={() => setSelectedLanguage(lang.id)}
+                                >
+                                    <span className="lang-flag">{lang.flag}</span>
+                                    <span className="lang-name">{lang.name}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="profile-section-group">
                         <label>Mate AI Kişiliği</label>
                         <div className="persona-grid">
@@ -99,7 +121,6 @@ const Profile = ({ user, currentPersona, onSavePersona, onClose }) => {
                             ))}
                         </div>
 
-                        {/* Custom Persona Area (Prompt Bar style) */}
                         <div className="custom-persona-wrapper">
                             <div className={`custom-persona-input-container ${selectedPersona === 'custom' ? 'active' : ''}`}>
                                 <textarea
@@ -113,14 +134,13 @@ const Profile = ({ user, currentPersona, onSavePersona, onClose }) => {
                                 />
                                 <div className="custom-persona-action">
                                     <div className={`persona-type-badge ${selectedPersona === 'custom' ? 'visible' : ''}`}>
-                                        <Sparkles size={12} /> Özel Mod
+                                        <Sparkles size={12} /> Özel Mod Aktif
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Aksiyon Butonları */}
                     <div className="profile-actions">
                         <button className="sign-in-btn save-profile-btn" onClick={handleSave} disabled={isSaving}>
                             <Save size={18} />

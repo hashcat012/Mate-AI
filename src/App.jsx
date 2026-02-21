@@ -30,10 +30,14 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isIncognito, setIsIncognito] = useState(false);
 
-  // AI Persona state
+  // Settings state
   const [persona, setPersona] = useState(() => {
     const saved = localStorage.getItem('mate_ai_persona');
     return saved ? JSON.parse(saved) : { id: 'normal', name: 'Normal', prompt: 'Sen yardımsever, zeki ve dürüst bir yapay zeka asistanısın.' };
+  });
+
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem('mate_ai_language') || 'tr-TR';
   });
 
   const chatIdRef = useRef(null);
@@ -69,9 +73,8 @@ function App() {
 
     if (isFirst || isFirstIncognito) setIsInitial(false);
 
-    // Build AI history with PERSONA as system prompt
     const aiMessages = [
-      { role: 'system', content: persona.prompt },
+      { role: 'system', content: persona.prompt + ` Lütfen şu dilde yanıt ver: ${language}` },
       ...currentMessages.map(m => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text
@@ -89,12 +92,29 @@ function App() {
     }
   };
 
+  const handleVoiceSync = (userText, aiText) => {
+    const currentMessages = messagesRef.current;
+    const isFirst = !chatIdRef.current && !isIncognito;
+
+    if (isFirst) setIsInitial(false);
+
+    setMessages(prev => [
+      ...prev,
+      { text: userText, sender: 'user', timestamp: new Date() },
+      { text: aiText, sender: 'ai', timestamp: new Date() }
+    ]);
+
+    if (!isIncognito) {
+      saveToFirestore(isFirst, userText, aiText, currentMessages);
+    }
+  };
+
   const saveToFirestore = async (isFirst, userText, aiText, previousMessages) => {
     try {
       let currentChatId = chatIdRef.current;
       if (isFirst) {
         const titleResponse = await getAICompletion([
-          { role: 'system', content: 'Sadece 2-4 kelimelik kısa Türkçe bir başlık yaz. Başka hiçbir şey ekleme.' },
+          { role: 'system', content: 'Sadece 2-4 kelimelik kısa bir başlık yaz. Başka hiçbir şey ekleme.' },
           { role: 'user', content: userText }
         ]);
         const title = titleResponse?.trim().replace(/^"|"$/g, '').slice(0, 50) || userText.slice(0, 35);
@@ -131,7 +151,7 @@ function App() {
     if (!userText) return;
     setMessages(prev => prev.filter((_, i) => i !== aiMsgIndex));
     const history = [
-      { role: 'system', content: persona.prompt },
+      { role: 'system', content: persona.prompt + ` Lütfen şu dilde yanıt ver: ${language}` },
       ...msgs.slice(0, aiMsgIndex).map(m => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text
@@ -167,15 +187,8 @@ function App() {
 
   const handleIncognito = () => {
     if (isIncognito) {
-      if (messages.length === 0) {
-        // Toggle back to normal if empty
-        handleNewChat();
-      } else {
-        // If has messages, create a NEW NORMAL chat (user request)
-        handleNewChat();
-      }
+      handleNewChat();
     } else {
-      // Enter incognito
       chatIdRef.current = null;
       setMessages([]);
       setIsInitial(true);
@@ -183,9 +196,11 @@ function App() {
     }
   };
 
-  const savePersona = (newPersona) => {
+  const handleSaveSettings = ({ persona: newPersona, language: newLang }) => {
     setPersona(newPersona);
+    setLanguage(newLang);
     localStorage.setItem('mate_ai_persona', JSON.stringify(newPersona));
+    localStorage.setItem('mate_ai_language', newLang);
   };
 
   if (loading) return <div className="loading-screen">Mate AI</div>;
@@ -204,7 +219,6 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* FIXED Sidebar Toggle - Outside main-content to avoid resizing jitter */}
       <AnimatePresence>
         {user && !sidebarOpen && (
           <motion.button
@@ -213,7 +227,7 @@ function App() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5 }}
             transition={{
-              delay: 0.5, // 0.5s magic delay
+              delay: 0.5,
               duration: 0.3,
               type: 'spring',
               damping: 15
@@ -228,7 +242,6 @@ function App() {
       </AnimatePresence>
 
       <main className="main-content">
-        {/* Top bar (Right side actions only) */}
         <div className="topbar">
           <div className="topbar-right">
             {isIncognito && (
@@ -264,7 +277,8 @@ function App() {
             <Profile
               user={user}
               currentPersona={persona}
-              onSavePersona={savePersona}
+              currentLanguage={language}
+              onSaveSettings={handleSaveSettings}
               onClose={() => setShowProfile(false)}
             />
           )}
@@ -272,7 +286,16 @@ function App() {
 
         <Chat messages={messages} isInitial={isInitial} onRegenerate={handleRegenerate} />
         <PromptBar onSend={handleSendMessage} isInitial={isInitial} setVoiceMode={setVoiceMode} />
-        {voiceMode && <VoiceChat onSend={handleSendMessage} onClose={() => setVoiceMode(false)} />}
+
+        {voiceMode && (
+          <VoiceChat
+            messages={messages}
+            persona={persona}
+            language={language}
+            onSend={handleVoiceSync}
+            onClose={() => setVoiceMode(false)}
+          />
+        )}
       </main>
     </div>
   );
