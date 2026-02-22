@@ -23,19 +23,24 @@ import './components/CodeEditorSidebar.css';
 
 // Parse code blocks from AI response
 const parseCodeBlocks = (text) => {
-  const codeBlockRegex = /```(\w+)?\s*\n?([\s\S]*?)```/g;
+  // Daha güçlü regex - tüm kod bloklarını yakala
+  const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
   const files = [];
   let match;
   let htmlCount = 0;
   let cssCount = 0;
   let jsCount = 0;
-  let otherCount = 0;
 
   while ((match = codeBlockRegex.exec(text)) !== null) {
-    const language = (match[1] || 'text').toLowerCase();
-    const code = match[2].trim();
+    const language = (match[1] || 'text').toLowerCase().trim();
+    // Kodun tamamını al, sadece baştaki/sondaki boş satırları temizle
+    let code = match[2];
+    // Baştaki boş satırları temizle
+    code = code.replace(/^\n+/, '');
+    // Sondaki boşlukları temizle
+    code = code.replace(/\n+$/, '');
 
-    if (!code) continue;
+    if (!code || code.trim() === '') continue;
 
     // Determine filename based on language
     let filename;
@@ -86,7 +91,7 @@ function App() {
   // Settings state
   const [persona, setPersona] = useState(() => {
     const saved = localStorage.getItem('mate_ai_persona');
-    return saved ? JSON.parse(saved) : { id: 'normal', name: 'Normal', prompt: 'Sen yardımsever, zeki ve dürüst bir yapay zeka asistanısın. Kullanıcı senden uygulama, website, oyun veya herhangi bir kod tabanlı proje yapmanı istediğinde, hemen kod yazmaya başla. Asla "bilgi vermem gerekiyor" veya "detayları belirleyelim" gibi şeyler söyleme. Doğrudan çalışan, tam kod yaz. HTML, CSS, JavaScript kullanarak tam çalışan uygulamalar oluştur.' };
+    return saved ? JSON.parse(saved) : { id: 'normal', name: 'Normal', prompt: 'Sen yardımsever, zeki ve dürüst bir yapay zeka asistanısın. Kullanıcı senden uygulama, website, oyun, sayfa, buton, form, menü, slider, galeri, hesap makinesi, saat, takvim, liste, tablo, kart, modal, popup, animasyon, efekt, tasarım, şablon, tema, component, fonksiyon, script, program, tool, araç, oyun veya herhangi bir dijital ürün yapmanı istediğinde, hemen kod yazmaya başla. "Yap", "oluştur", "tasarla", "yaz", "kodla", "geliştir", "build et", "implement et" gibi kelimeler geçiyorsa direkt kod yaz. Asla "bilgi vermem gerekiyor" veya "detayları belirleyelim" gibi şeyler söyleme. Doğrudan çalışan, tam kod yaz. HTML, CSS, JavaScript kullanarak tam çalışan uygulamalar oluştur. Kısa açıklama yaz, sonra hemen kod blokları ile kodu ver.' };
   });
 
   const [language, setLanguage] = useState(() => {

@@ -85,7 +85,7 @@ export const getAICompletion = async (messages, attachments = []) => {
                 return m;
             }),
             temperature: 0.7,
-            max_tokens: 1024
+            max_tokens: 8192
         };
 
         return sendRequest(body);
@@ -96,7 +96,7 @@ export const getAICompletion = async (messages, attachments = []) => {
         model: "llama-3.3-70b-versatile",
         messages: formattedMessages,
         temperature: 0.7,
-        max_tokens: 1024
+        max_tokens: 8192
     };
 
     return sendRequest(body);

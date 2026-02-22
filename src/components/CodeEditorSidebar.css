@@ -297,4 +297,19 @@
     .tab-file-info span:not(.file-icon) {
         display: none;
     }
+
+    /* Mobilde kopyala butonu ikonlu */
+    .tab-actions {
+        gap: 12px;
+    }
+
+    .tab-actions button {
+        padding: 8px;
+        background: #3c3c3c;
+        border-radius: 6px;
+    }
+
+    .tab-actions button:hover {
+        background: #4a4a4a;
+    }
 }
