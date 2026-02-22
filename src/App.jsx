@@ -287,6 +287,9 @@ function App() {
         <Chat messages={messages} isInitial={isInitial} onRegenerate={handleRegenerate} />
         <PromptBar onSend={handleSendMessage} isInitial={isInitial} setVoiceMode={setVoiceMode} />
 
+      </main>
+
+      <AnimatePresence>
         {voiceMode && (
           <VoiceChat
             messages={messages}
@@ -296,7 +299,7 @@ function App() {
             onClose={() => setVoiceMode(false)}
           />
         )}
-      </main>
+      </AnimatePresence>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { X, Mic, MicOff, Volume2, Loader2, Sparkles, AlertCircle } from 'lucide-
 import { getAICompletion } from '../services/ai';
 
 const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
-    const [status, setStatus] = useState('idle'); // idle, listening, thinking, speaking
+    const [status, setStatus] = useState('initializing');
     const [transcript, setTranscript] = useState('');
     const [aiResponse, setAiResponse] = useState('');
     const [error, setError] = useState(null);
@@ -15,7 +15,57 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
     const isSpeakingRef = useRef(false);
     const isProcessingRef = useRef(false);
 
-    //Consolidated Speech Function
+    // Phonetic dictionary for correct English pronunciation with Turkish TTS voice
+    const phoneticDictionary = useRef({
+        'api': 'ey pi ay',
+        'ai': 'ey ay',
+        'mclaren': 'meklaren',
+        'groq': 'grok',
+        'firebase': 'fayırbeys',
+        'react': 'riyekt',
+        'javascript': 'cevaskiript',
+        'engine': 'encin',
+        'hypercar': 'haypır kar',
+        'p1': 'pi bir',
+        'f1': 'ef bir'
+    }).current;
+
+    const recognitionCorrection = useRef({
+        'ineklerin': 'McLaren',
+        'mek laren': 'McLaren',
+        'maklaren': 'McLaren',
+        'ey pi ay': 'API',
+        'ey ay': 'AI'
+    }).current;
+
+    const cleanForSpeech = useCallback((text) => {
+        if (language !== 'tr-TR') return text;
+        let cleaned = text;
+        Object.keys(phoneticDictionary).forEach(term => {
+            const regex = new RegExp(`\\b${term}\\b`, 'gi');
+            cleaned = cleaned.replace(regex, phoneticDictionary[term]);
+        });
+        return cleaned;
+    }, [language, phoneticDictionary]);
+
+    const correctTranscript = useCallback((text) => {
+        let corrected = text;
+        Object.keys(recognitionCorrection).forEach(wrong => {
+            const regex = new RegExp(`\\b${wrong}\\b`, 'gi');
+            corrected = corrected.replace(regex, recognitionCorrection[wrong]);
+        });
+        return corrected;
+    }, [recognitionCorrection]);
+
+    const startListening = useCallback(() => {
+        if (!recognitionRef.current || isSpeakingRef.current) return;
+        try {
+            recognitionRef.current.start();
+        } catch (e) {
+            console.warn("Recognition already running");
+        }
+    }, []);
+
     const speakResponse = useCallback((text) => {
         if (!isActiveRef.current) return;
 
@@ -43,73 +93,7 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
             }, 600);
         };
         window.speechSynthesis.speak(utterance);
-    }, [language, cleanForSpeech]);
-
-    // Phonetic dictionary for correct English pronunciation with Turkish TTS voice
-    const phoneticDictionary = {
-        'api': 'ey pi ay',
-        'ai': 'ey ay',
-        'mclaren': 'meklaren',
-        'groq': 'grok',
-        'firebase': 'fayırbeys',
-        'react': 'riyekt',
-        'javascript': 'cevaskiript',
-        'engine': 'encin',
-        'hypercar': 'haypır kar',
-        'p1': 'pi bir',
-        'f1': 'ef bir'
-    };
-
-    const recognitionCorrection = {
-        'ineklerin': 'McLaren',
-        'mek laren': 'McLaren',
-        'maklaren': 'McLaren',
-        'ey pi ay': 'API',
-        'ey ay': 'AI'
-    };
-
-    const cleanForSpeech = (text) => {
-        if (language !== 'tr-TR') return text; // Only apply for Turkish voice
-        let cleaned = text;
-        Object.keys(phoneticDictionary).forEach(term => {
-            const regex = new RegExp(`\\b${term}\\b`, 'gi');
-            cleaned = cleaned.replace(regex, phoneticDictionary[term]);
-        });
-        return cleaned;
-    };
-
-    const correctTranscript = (text) => {
-        let corrected = text;
-        Object.keys(recognitionCorrection).forEach(wrong => {
-            const regex = new RegExp(`\\b${wrong}\\b`, 'gi');
-            corrected = corrected.replace(regex, recognitionCorrection[wrong]);
-        });
-        return corrected;
-    };
-
-    const startListening = () => {
-        if (!recognitionRef.current || isSpeakingRef.current) return;
-        try {
-            recognitionRef.current.start();
-        } catch (e) {
-            console.warn("Recognition already running");
-        }
-    };
-
-    const toggleMic = () => {
-        if (status === 'listening') {
-            const finalTranscript = transcriptRef.current;
-            recognitionRef.current?.stop();
-
-            if (finalTranscript.trim()) {
-                handleVoiceSuccess(finalTranscript);
-            } else {
-                setStatus('idle');
-            }
-        } else {
-            startListening();
-        }
-    };
+    }, [language, cleanForSpeech, startListening]);
 
     // AI Processing logic
     const handleVoiceSuccess = useCallback(async (text) => {
@@ -147,7 +131,22 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
             isProcessingRef.current = false;
             setStatus('idle');
         }
-    }, [messages, persona, language, onSend, speakResponse]);
+    }, [messages, persona, language, onSend, speakResponse, correctTranscript]);
+
+    const toggleMic = useCallback(() => {
+        if (status === 'listening') {
+            const finalTranscript = transcriptRef.current;
+            recognitionRef.current?.stop();
+
+            if (finalTranscript.trim()) {
+                handleVoiceSuccess(finalTranscript);
+            } else {
+                setStatus('idle');
+            }
+        } else {
+            startListening();
+        }
+    }, [status, handleVoiceSuccess, startListening]);
 
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -161,7 +160,10 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
         recognition.continuous = false;
         recognition.interimResults = true;
 
+        let isComponentActive = true;
+
         recognition.onstart = () => {
+            if (!isComponentActive) return;
             setStatus('listening');
             setError(null);
             transcriptRef.current = '';
@@ -178,43 +180,72 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
         };
 
         recognition.onerror = (event) => {
+            if (!isComponentActive) return;
             if (event.error === 'not-allowed') {
-                setError("Mikrofon izni reddedildi.");
-            } else if (event.error !== 'no-speech') {
+                setError("Mikrofon izni reddedildi. Lütfen mikrofon izni verin.");
+                setStatus('idle');
+            } else if (event.error === 'no-speech') {
+                setStatus('idle');
+            } else {
                 setError("Hata: " + event.error);
+                setStatus('idle');
             }
-            setStatus('idle');
         };
 
         recognition.onend = () => {
+            if (!isComponentActive) return;
             if (isActiveRef.current && !isSpeakingRef.current) {
                 const finalTranscript = transcriptRef.current;
-                if (finalTranscript.trim() && status === 'listening') {
+                if (finalTranscript.trim()) {
                     handleVoiceSuccess(finalTranscript);
-                } else {
+                } else if (isActiveRef.current) {
                     setStatus('idle');
+                    setTimeout(() => {
+                        if (isActiveRef.current && !isSpeakingRef.current) {
+                            try {
+                                recognition.start();
+                            } catch (e) {
+                                console.warn("Recognition restart failed:", e);
+                            }
+                        }
+                    }, 500);
                 }
             }
         };
 
         recognitionRef.current = recognition;
-        startListening();
+
+        // Small delay before starting to ensure component is fully mounted
+        const startTimer = setTimeout(() => {
+            if (isComponentActive) {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.warn("Initial start failed:", e);
+                }
+            }
+        }, 300);
 
         return () => {
+            isComponentActive = false;
             isActiveRef.current = false;
-            recognition.stop();
+            clearTimeout(startTimer);
+            try {
+                recognition.stop();
+            } catch (e) { }
             window.speechSynthesis.cancel();
         };
     }, [handleVoiceSuccess, language]);
 
     return (
-        <div className="voice-overlay">
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="voice-container"
-            >
+        <motion.div
+            className="voice-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+        >
+            <div className="voice-container">
                 <button className="close-voice" onClick={onClose} title="Kapat"><X size={32} /></button>
 
                 <div className="voice-content">
@@ -228,7 +259,8 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
                         >
                             {status === 'thinking' ? <Loader2 size={48} className="animate-spin" /> :
                                 status === 'speaking' ? <Volume2 size={48} /> :
-                                    <Mic size={48} />}
+                                    status === 'initializing' ? <Loader2 size={48} className="animate-spin" /> :
+                                        <Mic size={48} />}
                         </motion.div>
                     </div>
 
@@ -236,21 +268,24 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
                         <div className={`voice-status-badge ${status}`}>
                             {status === 'listening' ? 'Dinleniyor' :
                                 status === 'thinking' ? 'Düşünülüyor' :
-                                    status === 'speaking' ? 'Konuşuluyor' : 'Hazır'}
+                                    status === 'speaking' ? 'Konuşuluyor' :
+                                        status === 'initializing' ? 'Başlatılıyor...' : 'Hazır'}
                         </div>
 
                         <p className="user-text">
-                            {transcript || (status === 'listening' ? 'Konuşun...' : 'Bekleniyor')}
+                            {transcript || (status === 'listening' ? 'Konuşun...' :
+                                status === 'initializing' ? 'Mikrofon hazırlanıyor...' : 'Bekleniyor')}
                         </p>
 
-                        <AnimatePresence>
+                        <AnimatePresence mode="wait">
                             {aiResponse && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
                                     className="ai-voice-card"
                                 >
-                                    <Sparkles size={16} className="text-purple-400" />
+                                    <Sparkles size={16} style={{ color: '#a78bfa', flexShrink: 0, marginTop: 4 }} />
                                     <p>{aiResponse}</p>
                                 </motion.div>
                             )}
@@ -274,8 +309,8 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
                     </button>
                     <span className="voice-hint">Dil: {language}</span>
                 </div>
-            </motion.div>
-        </div>
+            </div>
+        </motion.div>
     );
 };
 
