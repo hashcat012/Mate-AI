@@ -161,6 +161,16 @@
     animation: pulse-glow 1.5s ease-in-out infinite;
 }
 
+.action-btn.code-editor-btn {
+    color: #a78bfa;
+    background: rgba(167, 139, 250, 0.1);
+}
+
+.action-btn.code-editor-btn:hover {
+    color: #c4b5fd;
+    background: rgba(167, 139, 250, 0.2);
+}
+
 @keyframes pulse-glow {
 
     0%,
@@ -197,5 +207,51 @@
     .code-copy-btn span {
         display: none;
         /* Hide 'Copy' text, keep icon */
+    }
+}
+
+/* ── Message Attachments (Images) ─────────────────── */
+.message-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.message-image-container {
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 300px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.message-attached-image {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    object-fit: cover;
+    display: block;
+}
+
+.message-file-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Mobile styles for attachments */
+@media (max-width: 768px) {
+    .message-image-container {
+        max-width: 200px;
+    }
+
+    .message-attached-image {
+        max-height: 200px;
     }
 }

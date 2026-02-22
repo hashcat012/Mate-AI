@@ -10,6 +10,7 @@ import PromptBar from './components/PromptBar';
 import Auth from './components/Auth';
 import VoiceChat from './components/VoiceChat';
 import Profile from './components/Profile';
+import CodeEditorSidebar from './components/CodeEditorSidebar';
 import { getAICompletion } from './services/ai';
 import './App.css';
 import './components/Sidebar.css';
@@ -18,6 +19,43 @@ import './components/PromptBar.css';
 import './components/Auth.css';
 import './components/VoiceChat.css';
 import './components/Profile.css';
+import './components/CodeEditorSidebar.css';
+
+// Parse code blocks from AI response
+const parseCodeBlocks = (text) => {
+  const codeBlockRegex = /```(\w+)?\s*\n?([\s\S]*?)```/g;
+  const files = [];
+  let match;
+  let fileIndex = 0;
+
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    const language = match[1] || 'text';
+    const code = match[2].trim();
+
+    // Determine filename based on language or content
+    let filename = `file_${fileIndex + 1}`;
+
+    if (language === 'html') filename = `index.html`;
+    else if (language === 'css') filename = `style.css`;
+    else if (language === 'javascript' || language === 'js') filename = `script.js`;
+    else if (language === 'typescript' || language === 'ts') filename = `script.ts`;
+    else if (language === 'python' || language === 'py') filename = `main.py`;
+    else if (language === 'json') filename = `data.json`;
+    else if (language === 'react' || language === 'jsx') filename = `Component.jsx`;
+    else filename = `code.${language}`;
+
+    // Check if file with same name exists
+    const existingIndex = files.findIndex(f => f.name === filename);
+    if (existingIndex >= 0) {
+      files[existingIndex].code = code;
+    } else {
+      files.push({ name: filename, code, language });
+      fileIndex++;
+    }
+  }
+
+  return files;
+};
 
 function App() {
   const [user, setUser] = useState(null);
@@ -29,6 +67,8 @@ function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isIncognito, setIsIncognito] = useState(false);
+  const [codeEditorOpen, setCodeEditorOpen] = useState(false);
+  const [codeFiles, setCodeFiles] = useState([]);
 
   // Settings state
   const [persona, setPersona] = useState(() => {
@@ -73,11 +113,11 @@ function App() {
 
     if (isFirst || isFirstIncognito) setIsInitial(false);
 
-    // Build message content with attachments info
+    // Build message content for display
     let messageContent = text;
     if (attachments.length > 0) {
-      const attachmentInfo = attachments.map(a => `[Ek: ${a.name}]`).join(' ');
-      messageContent = attachmentInfo + ' ' + text;
+      const attachmentNames = attachments.map(a => a.name).join(', ');
+      messageContent = text + (text ? ' ' : '') + `[${attachmentNames}]`;
     }
 
     const aiMessages = [
@@ -86,17 +126,23 @@ function App() {
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text
       })),
-      { role: 'user', content: messageContent }
+      { role: 'user', content: text || 'Bu görseli/görselleri analiz et.' }
     ];
 
     setMessages(prev => [...prev, {
       text: messageContent,
       sender: 'user',
       timestamp: new Date(),
-      attachments: attachments.length > 0 ? attachments.map(a => ({ name: a.name, type: a.type, preview: a.preview })) : undefined
+      attachments: attachments.length > 0 ? attachments.map(a => ({
+        name: a.name,
+        type: a.type,
+        preview: a.preview,
+        file: a.file
+      })) : undefined
     }]);
 
-    const aiText = await getAICompletion(aiMessages).catch(e => "Hata: " + e.message);
+    // Pass attachments to AI for vision processing
+    const aiText = await getAICompletion(aiMessages, attachments).catch(e => "Hata: " + e.message);
     setMessages(prev => [...prev, { text: aiText, sender: 'ai', timestamp: new Date() }]);
 
     if (!isIncognito) {
@@ -296,7 +342,13 @@ function App() {
           )}
         </AnimatePresence>
 
-        <Chat messages={messages} isInitial={isInitial} onRegenerate={handleRegenerate} />
+        <Chat messages={messages} isInitial={isInitial} onRegenerate={handleRegenerate} onOpenCodeEditor={(text) => {
+          const files = parseCodeBlocks(text);
+          if (files.length > 0) {
+            setCodeFiles(files);
+            setCodeEditorOpen(true);
+          }
+        }} />
         <PromptBar onSend={handleSendMessage} isInitial={isInitial} setVoiceMode={setVoiceMode} />
 
       </main>
@@ -312,6 +364,12 @@ function App() {
           />
         )}
       </AnimatePresence>
+
+      <CodeEditorSidebar
+        isOpen={codeEditorOpen}
+        onClose={() => setCodeEditorOpen(false)}
+        files={codeFiles}
+      />
     </div>
   );
 }

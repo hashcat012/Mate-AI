@@ -1,0 +1,231 @@
+.code-editor-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 100vh;
+    background: #0a0a0a;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
+}
+
+.code-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.code-editor-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+}
+
+.code-editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.code-action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.code-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Tabs */
+.code-editor-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.code-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+
+.code-tab:hover {
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.code-tab.active {
+    color: white;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom-color: white;
+}
+
+/* Content */
+.code-editor-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* File List */
+.code-file-list {
+    display: flex;
+    gap: 4px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    overflow-x: auto;
+}
+
+.code-file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.code-file-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.code-file-item.active {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* Editor Wrapper */
+.code-editor-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.code-editor-file-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: #1a1a1a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.code-editor-file-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.code-editor-file-actions button {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.code-editor-file-actions button:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Preview */
+.code-preview-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.code-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #1a1a1a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.code-preview-header button {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.code-preview-header button:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.code-preview-iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: white;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .code-editor-sidebar {
+        width: 100%;
+    }
+
+    .code-file-list {
+        padding: 8px;
+    }
+
+    .code-file-item {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+}

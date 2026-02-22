@@ -69,16 +69,28 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
     const speakResponse = useCallback((text) => {
         if (!isActiveRef.current) return;
 
+        // Cancel any ongoing speech
         window.speechSynthesis.cancel();
+
         const speechFriendlyText = cleanForSpeech(text);
         const utterance = new SpeechSynthesisUtterance(speechFriendlyText);
         utterance.lang = language;
         utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        // Try to find a suitable voice
+        const voices = window.speechSynthesis.getVoices();
+        const langVoice = voices.find(v => v.lang.startsWith(language.split('-')[0]));
+        if (langVoice) {
+            utterance.voice = langVoice;
+        }
 
         utterance.onstart = () => {
             isSpeakingRef.current = true;
             setStatus('speaking');
         };
+
         utterance.onend = () => {
             isSpeakingRef.current = false;
             isProcessingRef.current = false;
@@ -92,7 +104,18 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
                 }
             }, 600);
         };
-        window.speechSynthesis.speak(utterance);
+
+        utterance.onerror = (event) => {
+            console.error('Speech synthesis error:', event.error);
+            isSpeakingRef.current = false;
+            isProcessingRef.current = false;
+            setStatus('idle');
+        };
+
+        // Small delay to ensure speech synthesis is ready
+        setTimeout(() => {
+            window.speechSynthesis.speak(utterance);
+        }, 100);
     }, [language, cleanForSpeech, startListening]);
 
     // AI Processing logic
@@ -147,6 +170,23 @@ const VoiceChat = ({ messages, persona, language, onSend, onClose }) => {
             startListening();
         }
     }, [status, handleVoiceSuccess, startListening]);
+
+    // Preload voices for speech synthesis
+    useEffect(() => {
+        const loadVoices = () => {
+            window.speechSynthesis.getVoices();
+        };
+
+        // Load voices immediately if available
+        loadVoices();
+
+        // Chrome requires this event
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+
+        return () => {
+            window.speechSynthesis.onvoiceschanged = null;
+        };
+    }, []);
 
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
