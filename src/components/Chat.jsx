@@ -99,8 +99,8 @@ const MessageActions = ({ text, onRegenerate, index, onOpenCodeEditor }) => {
         setSpeaking(true);
     };
 
-    // Check if message has code blocks
-    const hasCodeBlocks = /```[\s\S]*?```/.test(text);
+    // Check if message has code blocks (more comprehensive)
+    const hasCodeBlocks = /```[\s\S]*?```/.test(text) || /``[\s\S]*?``/.test(text) || /`[^`]+`/.test(text);
 
     return (
         <div className="message-actions">

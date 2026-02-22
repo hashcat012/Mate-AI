@@ -112,7 +112,7 @@
 .option-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     padding: 8px 12px;
     border-radius: 8px;
     background: transparent;

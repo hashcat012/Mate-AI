@@ -1,20 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Editor from '@monaco-editor/react';
-import { X, FileCode, Eye, Download, MoreVertical, FolderOpen, Code2, Copy, Check, RefreshCw } from 'lucide-react';
+import { X, FileCode, Eye, Download, Copy, Check, RefreshCw, Code2, Play } from 'lucide-react';
 
-const CodeEditorSidebar = ({ isOpen, onClose, files, activeFileIndex, onFileSelect }) => {
-    const [activeTab, setActiveTab] = useState('files'); // 'files' | 'preview'
+const CodeEditorSidebar = ({ isOpen, onClose, files }) => {
     const [selectedFileIndex, setSelectedFileIndex] = useState(0);
     const [copied, setCopied] = useState(false);
-    const [showMenu, setShowMenu] = useState(false);
+    const [activeTab, setActiveTab] = useState('files'); // 'files' | 'preview'
     const iframeRef = useRef(null);
 
     useEffect(() => {
-        if (activeFileIndex !== undefined) {
-            setSelectedFileIndex(activeFileIndex);
+        if (files && files.length > 0) {
+            setSelectedFileIndex(0);
         }
-    }, [activeFileIndex]);
+    }, [files]);
+
+    useEffect(() => {
+        if (activeTab === 'preview' && iframeRef.current) {
+            refreshPreview();
+        }
+    }, [activeTab, files]);
 
     const currentFile = files && files[selectedFileIndex];
 
@@ -88,6 +93,18 @@ const CodeEditorSidebar = ({ isOpen, onClose, files, activeFileIndex, onFileSele
         return langMap[ext] || 'plaintext';
     };
 
+    const getFileIcon = (filename) => {
+        const ext = filename.split('.').pop().toLowerCase();
+        if (['html', 'htm'].includes(ext)) return '🌐';
+        if (['css', 'scss', 'sass', 'less'].includes(ext)) return '🎨';
+        if (['js', 'jsx', 'ts', 'tsx'].includes(ext)) return '⚡';
+        if (ext === 'json') return '📋';
+        if (ext === 'py') return '🐍';
+        if (ext === 'md') return '📝';
+        if (['png', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext)) return '🖼️';
+        return '📄';
+    };
+
     const generatePreviewHTML = () => {
         if (!files) return '';
 
@@ -102,26 +119,15 @@ const CodeEditorSidebar = ({ isOpen, onClose, files, activeFileIndex, onFileSele
         // Inject CSS
         if (css && html) {
             html = html.replace('</head>', `<style>${css}</style></head>`);
+        } else if (css && !html) {
+            html = `<!DOCTYPE html><html><head><style>${css}</style></head><body></body></html>`;
         }
 
         // Inject JS
         if (js && html) {
             html = html.replace('</body>', `<script>${js}</script></body>`);
-        }
-
-        // If no HTML but has CSS/JS, create basic structure
-        if (!htmlFile && (css || js)) {
-            html = `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    ${css ? `<style>${css}</style>` : ''}
-</head>
-<body>
-    ${js ? `<script>${js}</script>` : ''}
-</body>
-</html>`;
+        } else if (js && !html) {
+            html = `<!DOCTYPE html><html><head></head><body><script>${js}</script></body></html>`;
         }
 
         return html;
@@ -133,6 +139,8 @@ const CodeEditorSidebar = ({ isOpen, onClose, files, activeFileIndex, onFileSele
             iframeRef.current.srcdoc = html;
         }
     };
+
+    const hasHTMLFile = files && files.some(f => f.name.endsWith('.html'));
 
     if (!files || files.length === 0) return null;
 
@@ -162,31 +170,30 @@ const CodeEditorSidebar = ({ isOpen, onClose, files, activeFileIndex, onFileSele
                         </div>
                     </div>
 
-                    {/* Tabs */}
+                    {/* Tab Toggle */}
                     <div className="code-editor-tabs">
                         <button
                             className={`code-tab ${activeTab === 'files' ? 'active' : ''}`}
                             onClick={() => setActiveTab('files')}
                         >
-                            <FolderOpen size={16} />
+                            <Code2 size={16} />
                             <span>Files</span>
                         </button>
-                        <button
-                            className={`code-tab ${activeTab === 'preview' ? 'active' : ''}`}
-                            onClick={() => {
-                                setActiveTab('preview');
-                                setTimeout(refreshPreview, 100);
-                            }}
-                        >
-                            <Eye size={16} />
-                            <span>Preview</span>
-                        </button>
+                        {hasHTMLFile && (
+                            <button
+                                className={`code-tab ${activeTab === 'preview' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('preview')}
+                            >
+                                <Play size={16} />
+                                <span>Preview</span>
+                            </button>
+                        )}
                     </div>
 
                     {/* Content */}
                     <div className="code-editor-content">
                         {activeTab === 'files' ? (
-                            <>
+                            <div className="code-files-layout">
                                 {/* File List */}
                                 <div className="code-file-list">
                                     {files.map((file, index) => (
@@ -195,22 +202,25 @@ const CodeEditorSidebar = ({ isOpen, onClose, files, activeFileIndex, onFileSele
                                             className={`code-file-item ${selectedFileIndex === index ? 'active' : ''}`}
                                             onClick={() => setSelectedFileIndex(index)}
                                         >
-                                            <FileCode size={16} />
-                                            <span>{file.name}</span>
+                                            <span className="file-icon">{getFileIcon(file.name)}</span>
+                                            <span className="file-name">{file.name}</span>
                                         </button>
                                     ))}
                                 </div>
 
                                 {/* Editor */}
-                                <div className="code-editor-wrapper">
-                                    <div className="code-editor-file-header">
-                                        <span>{currentFile?.name}</span>
-                                        <div className="code-editor-file-actions">
+                                <div className="code-editor-area">
+                                    <div className="code-editor-tab-bar">
+                                        <div className="tab-file-info">
+                                            <span className="file-icon">{getFileIcon(currentFile?.name)}</span>
+                                            <span>{currentFile?.name}</span>
+                                        </div>
+                                        <div className="tab-actions">
                                             <button onClick={handleCopy} title="Kopyala">
-                                                {copied ? <Check size={16} color="#4ade80" /> : <Copy size={16} />}
+                                                {copied ? <Check size={14} color="#4ade80" /> : <Copy size={14} />}
                                             </button>
                                             <button onClick={handleDownload} title="İndir">
-                                                <Download size={16} />
+                                                <Download size={14} />
                                             </button>
                                         </div>
                                     </div>
@@ -227,22 +237,24 @@ const CodeEditorSidebar = ({ isOpen, onClose, files, activeFileIndex, onFileSele
                                             readOnly: false,
                                             automaticLayout: true,
                                             wordWrap: 'on',
-                                            padding: { top: 10 }
+                                            padding: { top: 10 },
+                                            fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
+                                            fontLigatures: true
                                         }}
                                     />
                                 </div>
-                            </>
+                            </div>
                         ) : (
-                            <div className="code-preview-wrapper">
-                                <div className="code-preview-header">
+                            <div className="code-preview-area">
+                                <div className="preview-toolbar">
                                     <span>Live Preview</span>
                                     <button onClick={refreshPreview} title="Yenile">
-                                        <RefreshCw size={16} />
+                                        <RefreshCw size={14} />
                                     </button>
                                 </div>
                                 <iframe
                                     ref={iframeRef}
-                                    className="code-preview-iframe"
+                                    className="preview-iframe"
                                     srcDoc={generatePreviewHTML()}
                                     title="Preview"
                                     sandbox="allow-scripts allow-same-origin"

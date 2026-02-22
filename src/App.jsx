@@ -26,32 +26,45 @@ const parseCodeBlocks = (text) => {
   const codeBlockRegex = /```(\w+)?\s*\n?([\s\S]*?)```/g;
   const files = [];
   let match;
-  let fileIndex = 0;
+  let htmlCount = 0;
+  let cssCount = 0;
+  let jsCount = 0;
+  let otherCount = 0;
 
   while ((match = codeBlockRegex.exec(text)) !== null) {
-    const language = match[1] || 'text';
+    const language = (match[1] || 'text').toLowerCase();
     const code = match[2].trim();
 
-    // Determine filename based on language or content
-    let filename = `file_${fileIndex + 1}`;
+    if (!code) continue;
 
-    if (language === 'html') filename = `index.html`;
-    else if (language === 'css') filename = `style.css`;
-    else if (language === 'javascript' || language === 'js') filename = `script.js`;
-    else if (language === 'typescript' || language === 'ts') filename = `script.ts`;
-    else if (language === 'python' || language === 'py') filename = `main.py`;
-    else if (language === 'json') filename = `data.json`;
-    else if (language === 'react' || language === 'jsx') filename = `Component.jsx`;
-    else filename = `code.${language}`;
+    // Determine filename based on language
+    let filename;
 
-    // Check if file with same name exists
-    const existingIndex = files.findIndex(f => f.name === filename);
-    if (existingIndex >= 0) {
-      files[existingIndex].code = code;
+    if (language === 'html') {
+      filename = htmlCount === 0 ? 'index.html' : `page${htmlCount + 1}.html`;
+      htmlCount++;
+    } else if (language === 'css') {
+      filename = cssCount === 0 ? 'style.css' : `style${cssCount + 1}.css`;
+      cssCount++;
+    } else if (language === 'javascript' || language === 'js') {
+      filename = jsCount === 0 ? 'script.js' : `script${jsCount + 1}.js`;
+      jsCount++;
+    } else if (language === 'typescript' || language === 'ts') {
+      filename = jsCount === 0 ? 'script.ts' : `script${jsCount + 1}.ts`;
+      jsCount++;
+    } else if (language === 'python' || language === 'py') {
+      filename = 'main.py';
+    } else if (language === 'json') {
+      filename = 'data.json';
+    } else if (language === 'react' || language === 'jsx') {
+      filename = 'Component.jsx';
+    } else if (language === 'tsx') {
+      filename = 'Component.tsx';
     } else {
-      files.push({ name: filename, code, language });
-      fileIndex++;
+      filename = `code.${language}`;
     }
+
+    files.push({ name: filename, code, language });
   }
 
   return files;
@@ -73,7 +86,7 @@ function App() {
   // Settings state
   const [persona, setPersona] = useState(() => {
     const saved = localStorage.getItem('mate_ai_persona');
-    return saved ? JSON.parse(saved) : { id: 'normal', name: 'Normal', prompt: 'Sen yardımsever, zeki ve dürüst bir yapay zeka asistanısın.' };
+    return saved ? JSON.parse(saved) : { id: 'normal', name: 'Normal', prompt: 'Sen yardımsever, zeki ve dürüst bir yapay zeka asistanısın. Kullanıcı senden uygulama, website, oyun veya herhangi bir kod tabanlı proje yapmanı istediğinde, hemen kod yazmaya başla. Asla "bilgi vermem gerekiyor" veya "detayları belirleyelim" gibi şeyler söyleme. Doğrudan çalışan, tam kod yaz. HTML, CSS, JavaScript kullanarak tam çalışan uygulamalar oluştur.' };
   });
 
   const [language, setLanguage] = useState(() => {
@@ -144,6 +157,13 @@ function App() {
     // Pass attachments to AI for vision processing
     const aiText = await getAICompletion(aiMessages, attachments).catch(e => "Hata: " + e.message);
     setMessages(prev => [...prev, { text: aiText, sender: 'ai', timestamp: new Date() }]);
+
+    // Auto-open code editor if response contains code blocks
+    const files = parseCodeBlocks(aiText);
+    if (files.length > 0) {
+      setCodeFiles(files);
+      setCodeEditorOpen(true);
+    }
 
     if (!isIncognito) {
       saveToFirestore(isFirst, messageContent, aiText, currentMessages);
