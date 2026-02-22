@@ -64,7 +64,7 @@ function App() {
     setIsIncognito(false);
   };
 
-  const handleSendMessage = async (text) => {
+  const handleSendMessage = async (text, attachments = []) => {
     if (!user) { setShowAuth(true); return; }
 
     const currentMessages = messages;
@@ -73,22 +73,34 @@ function App() {
 
     if (isFirst || isFirstIncognito) setIsInitial(false);
 
+    // Build message content with attachments info
+    let messageContent = text;
+    if (attachments.length > 0) {
+      const attachmentInfo = attachments.map(a => `[Ek: ${a.name}]`).join(' ');
+      messageContent = attachmentInfo + ' ' + text;
+    }
+
     const aiMessages = [
       { role: 'system', content: persona.prompt + ` Lütfen şu dilde yanıt ver: ${language}` },
       ...currentMessages.map(m => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text
       })),
-      { role: 'user', content: text }
+      { role: 'user', content: messageContent }
     ];
 
-    setMessages(prev => [...prev, { text, sender: 'user', timestamp: new Date() }]);
+    setMessages(prev => [...prev, {
+      text: messageContent,
+      sender: 'user',
+      timestamp: new Date(),
+      attachments: attachments.length > 0 ? attachments.map(a => ({ name: a.name, type: a.type, preview: a.preview })) : undefined
+    }]);
 
     const aiText = await getAICompletion(aiMessages).catch(e => "Hata: " + e.message);
     setMessages(prev => [...prev, { text: aiText, sender: 'ai', timestamp: new Date() }]);
 
     if (!isIncognito) {
-      saveToFirestore(isFirst, text, aiText, currentMessages);
+      saveToFirestore(isFirst, messageContent, aiText, currentMessages);
     }
   };
 

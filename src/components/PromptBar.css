@@ -52,7 +52,7 @@
     gap: 12px;
 }
 
-.prompt-form input {
+.prompt-form textarea {
     flex: 1;
     background: transparent;
     border: none;
@@ -60,6 +60,33 @@
     padding: 12px 0;
     font-size: 1rem;
     outline: none;
+    resize: none;
+    min-height: 24px;
+    max-height: 150px;
+    overflow-y: auto;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.5;
+}
+
+.prompt-form textarea::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.prompt-form textarea::-webkit-scrollbar {
+    width: 4px;
+}
+
+.prompt-form textarea::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.prompt-form textarea::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.prompt-form textarea::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .inner-action-container {
@@ -101,6 +128,97 @@
     font-size: 1.2rem;
 }
 
+/* Attachments Preview */
+.attachments-preview {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    overflow: hidden;
+}
+
+.attachment-item {
+    flex-shrink: 0;
+}
+
+.attachment-preview-image {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.attachment-preview-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.attachment-remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.attachment-remove-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.attachment-file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 8px 12px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.attachment-file-name {
+    font-size: 0.85rem;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachment-remove-btn-file {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+    margin-left: 4px;
+}
+
+.attachment-remove-btn-file:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
 /* Mobile Optimization — PromptBar */
 @media (max-width: 768px) {
     .prompt-bar-outer-container {
@@ -125,12 +243,21 @@
         border-radius: 24px;
     }
 
-    .prompt-form input {
+    .prompt-form textarea {
         font-size: 0.95rem;
     }
 
     .white-circle-inside {
         width: 36px;
         height: 36px;
+    }
+
+    .attachment-preview-image {
+        width: 56px;
+        height: 56px;
+    }
+
+    .attachment-file-name {
+        max-width: 100px;
     }
 }
