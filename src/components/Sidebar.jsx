@@ -85,10 +85,10 @@ const Sidebar = ({ user, onNewChat, onSelectChat, onClose, onProfileClick }) => 
 
     return (
         <motion.aside
-            initial={{ x: -280 }}
-            animate={{ x: 0 }}
-            exit={{ x: -280 }}
-            transition={{ type: 'spring', damping: 30, stiffness: 200 }}
+            initial={{ x: -320, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -320, opacity: 0 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 200 }}
             className="sidebar liquid-glass"
         >
             {/* Header */}

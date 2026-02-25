@@ -168,7 +168,7 @@ const Chat = ({ messages, isInitial, onRegenerate, onOpenCodeEditor }) => {
     }
 
     return (
-        <div className="chat-messages-container">
+        <motion.div layout className="chat-messages-container">
             <AnimatePresence>
                 {messages.map((msg, index) => (
                     <motion.div
@@ -237,7 +237,7 @@ const Chat = ({ messages, isInitial, onRegenerate, onOpenCodeEditor }) => {
                 ))}
             </AnimatePresence>
             <div ref={bottomRef} />
-        </div>
+        </motion.div>
     );
 };
 

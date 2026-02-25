@@ -50,6 +50,7 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
 
     return (
         <motion.div
+            layout
             className="prompt-bar-outer-container"
             initial={false}
             animate={{
@@ -59,6 +60,7 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
             transition={{
                 y: { type: 'spring', damping: 32, stiffness: 120, mass: 1 },
                 width: { type: 'spring', damping: 32, stiffness: 120, mass: 1 },
+                layout: { type: 'spring', damping: 32, stiffness: 120 }
             }}
             style={{
                 position: 'absolute',

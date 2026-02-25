@@ -324,7 +324,7 @@ function App() {
         )}
       </AnimatePresence>
 
-      <main className="main-content">
+      <motion.main layout className="main-content">
         <div className="topbar">
           <div className="topbar-right">
             {isIncognito && (
@@ -376,7 +376,7 @@ function App() {
         }} />
         <PromptBar onSend={handleSendMessage} isInitial={isInitial} setVoiceMode={setVoiceMode} />
 
-      </main>
+      </motion.main>
 
       <AnimatePresence>
         {voiceMode && (
