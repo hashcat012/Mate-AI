@@ -42,9 +42,9 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
     };
 
     // Vertical: when initial, center vertically; when not initial, stay at bottom
-    // position: absolute inside main-content (position: relative)
-    // bottom: 32px → element bottom is 32px from main-content bottom
-    // To center vertically: translateY = calc(-50vh + 32px + 50%)
+    // The wrapper is position:fixed at bottom:0, so we animate translateY to lift up
+    // When initial: move up by (50vh - 32px - element_height/2) ≈ calc(50vh - 32px - 50%)
+    // When not initial: stay at bottom (y = 0, wrapper handles bottom:32px via padding)
     const promptBarY = isInitial
         ? 'calc(-50vh + 32px + 50%)'
         : '0px';
@@ -55,22 +55,19 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
             initial={false}
             animate={{
                 y: promptBarY,
-                width: isInitial ? 'min(600px, 90%)' : 'min(850px, 92%)',
+                width: isInitial ? 'min(600px, 90vw)' : 'min(850px, 92vw)',
             }}
             transition={{
                 y: { type: 'spring', damping: 40, stiffness: 300, mass: 0.8 },
                 width: { type: 'spring', damping: 32, stiffness: 120, mass: 1 },
             }}
             style={{
-                position: 'absolute',
-                bottom: '32px',
-                left: '50%',
-                x: '-50%',
-                zIndex: 100,
+                pointerEvents: 'all',
+                marginBottom: '32px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                transformOrigin: 'bottom center'
+                transformOrigin: 'bottom center',
             }}
         >
             <AnimatePresence>

@@ -178,4 +178,9 @@
     background: rgba(10, 10, 10, 0.8);
     backdrop-filter: blur(10px);
   }
+
+  /* On mobile, sidebar overlays content — no padding offset for prompt bar */
+  .prompt-bar-fixed-wrapper {
+    padding-left: 0 !important;
+  }
 }

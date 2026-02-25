@@ -374,9 +374,32 @@ function App() {
             setCodeEditorOpen(true);
           }
         }} />
-        <PromptBar onSend={handleSendMessage} isInitial={isInitial} setVoiceMode={setVoiceMode} />
 
       </motion.main>
+
+      {/* PromptBar wrapper: fixed, centered in visible area (accounts for sidebar) */}
+      <motion.div
+        className="prompt-bar-fixed-wrapper"
+        animate={{
+          paddingLeft: (user && sidebarOpen) ? 304 : 0,
+        }}
+        transition={{
+          paddingLeft: { type: 'tween', duration: 0.35, ease: [0.4, 0, 0.2, 1] }
+        }}
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 100,
+          pointerEvents: 'none',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-end',
+        }}
+      >
+        <PromptBar onSend={handleSendMessage} isInitial={isInitial} setVoiceMode={setVoiceMode} />
+      </motion.div>
 
       <AnimatePresence>
         {voiceMode && (
