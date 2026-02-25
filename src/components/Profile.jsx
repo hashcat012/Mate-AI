@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Save, Trash2, LogOut, Sparkles, Languages } from 'lucide-react';
+import { X, User, Save, Trash2, LogOut, Sparkles, ChevronDown } from 'lucide-react';
 import { updateProfile, deleteUser, signOut } from 'firebase/auth';
 
 const personas = [
-    { id: 'normal', name: 'Normal', prompt: 'Sen yardımsever, zeki ve dürüst bir yapay zeka asistanısın.' },
-    { id: 'genius', name: 'Zeki & Analitik', prompt: 'Sen son derece zeki, analitik ve detaylara odaklanan bir bilim insanı gibisin. Teknik terimler kullanmaktan çekinme.' },
-    { id: 'blunt', name: 'Sert & Dobra', prompt: 'Sen çok dobra, kısa ve öz konuşan birisin. Lafı hiç dolandırmazsın, bazen sert olabilirsin.' },
-    { id: 'funny', name: 'Eğlenceli & Esprili', prompt: 'Sen çok eğlenceli, esprili ve sürekli şaka yapan bir asistansın. Her cevabında mizah olsun.' },
-    { id: 'polite', name: 'Kibar & Yardımsever', prompt: 'Sen son derece kibar, nazik ve her zaman "efendim" diyen, çok yardımcı bir asistansın.' }
+    { id: 'normal', name: 'Klasik', prompt: 'Sen yardımsever, zeki ve dürüst bir yapay zeka asistanısın. Kullanıcı senden uygulama, website, oyun, sayfa, buton, form, menü, slider, galeri, hesap makinesi, saat, takvim, liste, tablo, kart, modal, popup, animasyon, efekt, tasarım, şablon, tema, component, fonksiyon, script, program, tool, araç, oyun veya herhangi bir dijital ürün yapmanı istediğinde, hemen kod yazmaya başla. Doğrudan çalışan, tam kod yaz.' },
+    { id: 'genius', name: 'Zeki & Analitik', prompt: 'Sen son derece zeki, analitik ve detaylara odaklanan bir bilim insanı gibisin. Teknik terimler kullanmaktan çekinme. Verilere ve kanıtlara dayalı, mantıklı ve sistematik düşün.' },
+    { id: 'funny', name: 'Eğlenceli & Esprili', prompt: 'Sen çok eğlenceli, esprili ve sürekli şaka yapan bir asistansın. Her cevabında mizah olsun. Konuşmayı neşeli ve hafif tut.' },
+    { id: 'blunt', name: 'Sert & Dobra', prompt: 'Sen çok dobra, kısa ve öz konuşan birisin. Lafı hiç dolandırmazsın, bazen sert olabilirsin. Gereksiz nezaket yok.' },
+    { id: 'custom', name: 'Özel', prompt: '' },
 ];
 
 const languages = [
@@ -24,6 +24,8 @@ const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClos
     const [customPrompt, setCustomPrompt] = useState(currentPersona?.id === 'custom' ? currentPersona.prompt : '');
     const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage || 'tr-TR');
     const [isSaving, setIsSaving] = useState(false);
+    const [langOpen, setLangOpen] = useState(false);
+    const [personaOpen, setPersonaOpen] = useState(false);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -61,6 +63,9 @@ const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClos
         }
     };
 
+    const currentLang = languages.find(l => l.id === selectedLanguage);
+    const currentPersonaObj = personas.find(p => p.id === selectedPersona);
+
     return (
         <div className="auth-overlay">
             <motion.div
@@ -88,57 +93,127 @@ const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClos
                         </div>
                     </div>
 
+                    {/* Language Selector - Pill Style */}
                     <div className="profile-section-group">
                         <label>Dil Seçimi (Sesli & Yazılı)</label>
-                        <div className="language-grid">
-                            {languages.map((lang) => (
-                                <button
-                                    key={lang.id}
-                                    className={`lang-card ${selectedLanguage === lang.id ? 'active' : ''}`}
-                                    onClick={() => setSelectedLanguage(lang.id)}
+                        <div className="pill-selector-wrapper">
+                            <button
+                                className="pill-selector-btn liquid-glass"
+                                onClick={() => { setLangOpen(!langOpen); setPersonaOpen(false); }}
+                            >
+                                <span className="pill-selector-value">
+                                    <span className="lang-flag">{currentLang?.flag}</span>
+                                    <span>{currentLang?.name}</span>
+                                </span>
+                                <motion.span
+                                    animate={{ rotate: langOpen ? 180 : 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="pill-chevron"
                                 >
-                                    <span className="lang-flag">{lang.flag}</span>
-                                    <span className="lang-name">{lang.name}</span>
-                                </button>
-                            ))}
+                                    <ChevronDown size={16} />
+                                </motion.span>
+                            </button>
+                            <AnimatePresence>
+                                {langOpen && (
+                                    <motion.div
+                                        className="pill-dropdown liquid-glass"
+                                        initial={{ opacity: 0, y: -8, scaleY: 0.9 }}
+                                        animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                                        exit={{ opacity: 0, y: -8, scaleY: 0.9 }}
+                                        transition={{ duration: 0.18 }}
+                                        style={{ transformOrigin: 'top center' }}
+                                    >
+                                        {languages.map((lang) => (
+                                            <button
+                                                key={lang.id}
+                                                className={`pill-option ${selectedLanguage === lang.id ? 'active' : ''}`}
+                                                onClick={() => { setSelectedLanguage(lang.id); setLangOpen(false); }}
+                                            >
+                                                <span className="lang-flag">{lang.flag}</span>
+                                                <span>{lang.name}</span>
+                                            </button>
+                                        ))}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
 
+                    {/* Persona Selector - Pill Style */}
                     <div className="profile-section-group">
                         <label>Mate AI Kişiliği</label>
-                        <div className="persona-grid">
-                            {personas.map((p) => (
-                                <button
-                                    key={p.id}
-                                    className={`persona-card ${selectedPersona === p.id ? 'active' : ''}`}
-                                    onClick={() => setSelectedPersona(p.id)}
+                        <div className="pill-selector-wrapper">
+                            <button
+                                className="pill-selector-btn liquid-glass"
+                                onClick={() => { setPersonaOpen(!personaOpen); setLangOpen(false); }}
+                            >
+                                <span className="pill-selector-value">
+                                    <Sparkles size={14} />
+                                    <span>{currentPersonaObj?.name || 'Klasik'}</span>
+                                </span>
+                                <motion.span
+                                    animate={{ rotate: personaOpen ? 180 : 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="pill-chevron"
                                 >
-                                    <div className="persona-info">
-                                        <span className="p-name">{p.name}</span>
-                                        {selectedPersona === p.id && <Sparkles size={14} className="sparkle" />}
-                                    </div>
-                                </button>
-                            ))}
+                                    <ChevronDown size={16} />
+                                </motion.span>
+                            </button>
+                            <AnimatePresence>
+                                {personaOpen && (
+                                    <motion.div
+                                        className="pill-dropdown liquid-glass"
+                                        initial={{ opacity: 0, y: -8, scaleY: 0.9 }}
+                                        animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                                        exit={{ opacity: 0, y: -8, scaleY: 0.9 }}
+                                        transition={{ duration: 0.18 }}
+                                        style={{ transformOrigin: 'top center' }}
+                                    >
+                                        {personas.map((p) => (
+                                            <button
+                                                key={p.id}
+                                                className={`pill-option ${selectedPersona === p.id ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setSelectedPersona(p.id);
+                                                    if (p.id !== 'custom') setPersonaOpen(false);
+                                                }}
+                                            >
+                                                <Sparkles size={13} />
+                                                <span>{p.name}</span>
+                                            </button>
+                                        ))}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
 
-                        <div className="custom-persona-wrapper">
-                            <div className={`custom-persona-input-container ${selectedPersona === 'custom' ? 'active' : ''}`}>
-                                <textarea
-                                    className="custom-persona-textarea"
-                                    placeholder="Özel kişilik ayarla... (Örn: Sen bir tarih profesörüsün)"
-                                    value={customPrompt}
-                                    onChange={(e) => {
-                                        setCustomPrompt(e.target.value);
-                                        setSelectedPersona('custom');
-                                    }}
-                                />
-                                <div className="custom-persona-action">
-                                    <div className={`persona-type-badge ${selectedPersona === 'custom' ? 'visible' : ''}`}>
-                                        <Sparkles size={12} /> Özel Mod Aktif
+                        {/* Custom persona text input */}
+                        <AnimatePresence>
+                            {selectedPersona === 'custom' && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="custom-persona-wrapper"
+                                >
+                                    <div className="custom-persona-input-container active">
+                                        <textarea
+                                            className="custom-persona-textarea"
+                                            placeholder="Özel kişilik tanımla... (Örn: Sen bir tarih profesörüsün, her konuyu tarihi örneklerle açıklarsın.)"
+                                            value={customPrompt}
+                                            onChange={(e) => setCustomPrompt(e.target.value)}
+                                            autoFocus
+                                        />
+                                        <div className="custom-persona-action">
+                                            <div className="persona-type-badge visible">
+                                                <Sparkles size={12} /> Özel Mod Aktif
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     <div className="profile-actions">

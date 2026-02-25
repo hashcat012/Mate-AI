@@ -374,7 +374,7 @@ function App() {
             setCodeEditorOpen(true);
           }
         }} />
-        <PromptBar onSend={handleSendMessage} isInitial={isInitial} setVoiceMode={setVoiceMode} sidebarOpen={sidebarOpen} />
+        <PromptBar onSend={handleSendMessage} isInitial={isInitial} setVoiceMode={setVoiceMode} />
 
       </motion.main>
 

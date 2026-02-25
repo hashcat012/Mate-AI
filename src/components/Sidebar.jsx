@@ -161,8 +161,7 @@ const Sidebar = ({ user, onNewChat, onSelectChat, onClose, onProfileClick }) => 
                                             <Pin size={13} /> {chat.pinned ? 'Sabiti Kaldır' : 'Sabitle'}
                                         </button>
                                         <button className="option-item" onClick={(e) => startEditing(e, chat)}>
-                                            <Edit2 size={13} />
-                                            <span>Yeniden Adlandır</span>
+                                            <Edit2 size={13} /> Yeniden Adlandır
                                         </button>
                                         <button className="option-item delete" onClick={(e) => handleDeleteChat(e, chat.id)}>
                                             <Trash2 size={13} /> Sil

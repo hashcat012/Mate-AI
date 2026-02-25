@@ -1,21 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ArrowUp, AudioLines, X, FileText } from 'lucide-react';
 
-// Sidebar width + margin = 304px total (desktop only)
-const SIDEBAR_WIDTH = 304;
-
-const PromptBar = ({ onSend, isInitial, setVoiceMode, sidebarOpen = false }) => {
+const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
     const [input, setInput] = useState('');
     const [attachments, setAttachments] = useState([]);
-    const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
     const fileInputRef = useRef(null);
-
-    useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth <= 768);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -52,20 +42,12 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode, sidebarOpen = false }) => 
     };
 
     // Vertical: when initial, center vertically; when not initial, stay at bottom
-    // With position:fixed and bottom:32px:
-    // To center: translateY = calc(-50vh + 32px + 50%)
+    // position: absolute inside main-content (position: relative)
+    // bottom: 32px → element bottom is 32px from main-content bottom
+    // To center vertically: translateY = calc(-50vh + 32px + 50%)
     const promptBarY = isInitial
         ? 'calc(-50vh + 32px + 50%)'
         : '0px';
-
-    // Horizontal centering:
-    // The prompt bar is inside main-content (position: relative).
-    // main-content is flex:1, so its left edge is at SIDEBAR_WIDTH when sidebar is open, 0 when closed.
-    // We want the bar centered in the FULL viewport, not just main-content.
-    // So we use position: fixed to escape the flex layout, and calculate center manually.
-    // When sidebar open: center = SIDEBAR_WIDTH + (100vw - SIDEBAR_WIDTH) / 2
-    // When sidebar closed: center = 100vw / 2
-    // Both simplify to: left = 50vw + SIDEBAR_WIDTH/2 (open) or left = 50vw (closed)
 
     return (
         <motion.div
@@ -73,19 +55,16 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode, sidebarOpen = false }) => 
             initial={false}
             animate={{
                 y: promptBarY,
-                left: (sidebarOpen && !isMobile)
-                    ? `calc(50vw + ${SIDEBAR_WIDTH / 2}px)`
-                    : '50vw',
-                width: isInitial ? 'min(600px, 90vw)' : 'min(850px, 92vw)',
+                width: isInitial ? 'min(600px, 90%)' : 'min(850px, 92%)',
             }}
             transition={{
                 y: { type: 'spring', damping: 40, stiffness: 300, mass: 0.8 },
-                left: { type: 'tween', duration: 0.35, ease: [0.4, 0, 0.2, 1] },
                 width: { type: 'spring', damping: 32, stiffness: 120, mass: 1 },
             }}
             style={{
-                position: 'fixed',
+                position: 'absolute',
                 bottom: '32px',
+                left: '50%',
                 x: '-50%',
                 zIndex: 100,
                 display: 'flex',
