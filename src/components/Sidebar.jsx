@@ -94,16 +94,16 @@ const Sidebar = ({ user, onNewChat, onSelectChat, onClose, onProfileClick }) => 
             {/* Header */}
             <div className="sidebar-header">
                 <div className="logo-wrapper">
-                    {/* Daisy flower logo icon — 8 rounded petals */}
-                    <svg className="logo-flower" width="20" height="20" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                        <ellipse cx="50" cy="18" rx="10" ry="20" />
-                        <ellipse cx="50" cy="18" rx="10" ry="20" transform="rotate(45 50 50)" />
-                        <ellipse cx="50" cy="18" rx="10" ry="20" transform="rotate(90 50 50)" />
-                        <ellipse cx="50" cy="18" rx="10" ry="20" transform="rotate(135 50 50)" />
-                        <ellipse cx="50" cy="18" rx="10" ry="20" transform="rotate(180 50 50)" />
-                        <ellipse cx="50" cy="18" rx="10" ry="20" transform="rotate(225 50 50)" />
-                        <ellipse cx="50" cy="18" rx="10" ry="20" transform="rotate(270 50 50)" />
-                        <ellipse cx="50" cy="18" rx="10" ry="20" transform="rotate(315 50 50)" />
+                    {/* Rounded triangle logo icon */}
+                    <svg className="logo-flower" width="20" height="18" viewBox="0 0 100 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M50 8 L92 82 Q92 88 86 88 L14 88 Q8 88 8 82 Z"
+                            stroke="currentColor"
+                            strokeWidth="13"
+                            strokeLinejoin="round"
+                            strokeLinecap="round"
+                            fill="none"
+                        />
                     </svg>
                     <h1 className="logo-text">Mate AI</h1>
                 </div>
