@@ -1,11 +1,21 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, ArrowUp, AudioLines, X, FileText, Image } from 'lucide-react';
+import { Plus, ArrowUp, AudioLines, X, FileText } from 'lucide-react';
+
+// Sidebar width + margin = 304px total (desktop only)
+const SIDEBAR_WIDTH = 304;
 
 const PromptBar = ({ onSend, isInitial, setVoiceMode, sidebarOpen = false }) => {
     const [input, setInput] = useState('');
     const [attachments, setAttachments] = useState([]);
+    const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
     const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -41,38 +51,41 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode, sidebarOpen = false }) => 
         });
     };
 
-    // KEY FIX: Always at bottom: 32px (same coordinate system)
-    // When initial, lift it up using translateY in the SAME unit (vh)
-    // No bottom % <-> bottom px switching = no teleport
-    // Also adjust x position based on sidebar state
+    // Vertical: when initial, center vertically; when not initial, stay at bottom
+    // With position:fixed and bottom:32px:
+    // To center: translateY = calc(-50vh + 32px + 50%)
     const promptBarY = isInitial
-        ? 'calc(-50vh + 50%)'  // Moves bar to vertical center from its bottom position
-        : '0px';               // Stays at the bottom
+        ? 'calc(-50vh + 32px + 50%)'
+        : '0px';
 
-    // Sidebar takes ~304px (280px width + 24px margin)
-    // When sidebar is open, shift prompt bar to the right by ~120px for better centering
-    const sidebarOffset = sidebarOpen ? 120 : 0;
+    // Horizontal centering:
+    // The prompt bar is inside main-content (position: relative).
+    // main-content is flex:1, so its left edge is at SIDEBAR_WIDTH when sidebar is open, 0 when closed.
+    // We want the bar centered in the FULL viewport, not just main-content.
+    // So we use position: fixed to escape the flex layout, and calculate center manually.
+    // When sidebar open: center = SIDEBAR_WIDTH + (100vw - SIDEBAR_WIDTH) / 2
+    // When sidebar closed: center = 100vw / 2
+    // Both simplify to: left = 50vw + SIDEBAR_WIDTH/2 (open) or left = 50vw (closed)
 
     return (
         <motion.div
-            layout
             className="prompt-bar-outer-container"
             initial={false}
             animate={{
                 y: promptBarY,
-                marginLeft: sidebarOffset,
-                width: isInitial ? 'min(600px, 90%)' : 'min(850px, 92%)',
+                left: (sidebarOpen && !isMobile)
+                    ? `calc(50vw + ${SIDEBAR_WIDTH / 2}px)`
+                    : '50vw',
+                width: isInitial ? 'min(600px, 90vw)' : 'min(850px, 92vw)',
             }}
             transition={{
-                marginLeft: { type: 'spring', damping: 28, stiffness: 200 },
                 y: { type: 'spring', damping: 40, stiffness: 300, mass: 0.8 },
+                left: { type: 'spring', damping: 28, stiffness: 200 },
                 width: { type: 'spring', damping: 32, stiffness: 120, mass: 1 },
-                layout: { type: 'spring', damping: 32, stiffness: 120 }
             }}
             style={{
-                position: 'absolute',
+                position: 'fixed',
                 bottom: '32px',
-                left: '50%',
                 x: '-50%',
                 zIndex: 100,
                 display: 'flex',
@@ -87,7 +100,7 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode, sidebarOpen = false }) => 
                         key="welcome"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        exit={{ opacity: 0, transition: { duration: 0.15 } }}
                         transition={{ duration: 0.3 }}
                         className="welcome-text-container"
                     >
