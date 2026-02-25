@@ -80,7 +80,7 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode, sidebarOpen = false }) => 
             }}
             transition={{
                 y: { type: 'spring', damping: 40, stiffness: 300, mass: 0.8 },
-                left: { type: 'spring', damping: 28, stiffness: 200 },
+                left: { type: 'tween', duration: 0.35, ease: [0.4, 0, 0.2, 1] },
                 width: { type: 'spring', damping: 32, stiffness: 120, mass: 1 },
             }}
             style={{
