@@ -94,15 +94,16 @@ const Sidebar = ({ user, onNewChat, onSelectChat, onClose, onProfileClick }) => 
             {/* Header */}
             <div className="sidebar-header">
                 <div className="logo-wrapper">
-                    <svg className="logo-flower" width="20" height="20" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                        <ellipse cx="50" cy="20" rx="12" ry="22" />
-                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(45 50 50)" />
-                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(90 50 50)" />
-                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(135 50 50)" />
-                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(180 50 50)" />
-                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(225 50 50)" />
-                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(270 50 50)" />
-                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(315 50 50)" />
+                    {/* Sound wave logo icon */}
+                    <svg className="logo-flower" width="22" height="20" viewBox="0 0 44 40" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0" y="14" width="4" height="12" rx="2" />
+                        <rect x="6" y="8" width="4" height="24" rx="2" />
+                        <rect x="12" y="2" width="4" height="36" rx="2" />
+                        <rect x="18" y="6" width="4" height="28" rx="2" />
+                        <rect x="24" y="10" width="4" height="20" rx="2" />
+                        <rect x="30" y="4" width="4" height="32" rx="2" />
+                        <rect x="36" y="12" width="4" height="16" rx="2" />
+                        <rect x="42" y="16" width="4" height="8" rx="2" />
                     </svg>
                     <h1 className="logo-text">Mate AI</h1>
                 </div>
