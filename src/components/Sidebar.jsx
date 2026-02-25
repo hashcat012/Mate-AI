@@ -93,7 +93,19 @@ const Sidebar = ({ user, onNewChat, onSelectChat, onClose, onProfileClick }) => 
         >
             {/* Header */}
             <div className="sidebar-header">
-                <h1 className="logo-text">Mate AI</h1>
+                <div className="logo-wrapper">
+                    <svg className="logo-flower" width="20" height="20" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <ellipse cx="50" cy="20" rx="12" ry="22" />
+                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(45 50 50)" />
+                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(90 50 50)" />
+                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(135 50 50)" />
+                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(180 50 50)" />
+                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(225 50 50)" />
+                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(270 50 50)" />
+                        <ellipse cx="50" cy="20" rx="12" ry="22" transform="rotate(315 50 50)" />
+                    </svg>
+                    <h1 className="logo-text">Mate AI</h1>
+                </div>
                 <div className="sidebar-header-actions">
                     <button className="icon-btn" onClick={() => onNewChat?.()} title="Yeni Sohbet">
                         <Plus size={18} />

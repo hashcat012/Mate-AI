@@ -98,7 +98,7 @@ const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClos
                         <label>Dil Seçimi (Sesli & Yazılı)</label>
                         <div className="pill-selector-wrapper">
                             <button
-                                className="pill-selector-btn liquid-glass"
+                                className="pill-selector-btn"
                                 onClick={() => { setLangOpen(!langOpen); setPersonaOpen(false); }}
                             >
                                 <span className="pill-selector-value">
@@ -116,7 +116,7 @@ const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClos
                             <AnimatePresence>
                                 {langOpen && (
                                     <motion.div
-                                        className="pill-dropdown liquid-glass"
+                                        className="pill-dropdown"
                                         initial={{ opacity: 0, y: -8, scaleY: 0.9 }}
                                         animate={{ opacity: 1, y: 0, scaleY: 1 }}
                                         exit={{ opacity: 0, y: -8, scaleY: 0.9 }}
@@ -144,7 +144,7 @@ const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClos
                         <label>Mate AI Kişiliği</label>
                         <div className="pill-selector-wrapper">
                             <button
-                                className="pill-selector-btn liquid-glass"
+                                className="pill-selector-btn"
                                 onClick={() => { setPersonaOpen(!personaOpen); setLangOpen(false); }}
                             >
                                 <span className="pill-selector-value">
@@ -162,7 +162,7 @@ const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClos
                             <AnimatePresence>
                                 {personaOpen && (
                                     <motion.div
-                                        className="pill-dropdown liquid-glass"
+                                        className="pill-dropdown"
                                         initial={{ opacity: 0, y: -8, scaleY: 0.9 }}
                                         animate={{ opacity: 1, y: 0, scaleY: 1 }}
                                         exit={{ opacity: 0, y: -8, scaleY: 0.9 }}

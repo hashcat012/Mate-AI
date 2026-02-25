@@ -60,8 +60,8 @@
     justify-content: space-between;
     padding: 10px 16px 10px 20px;
     border-radius: 32px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
     color: white;
     cursor: pointer;
     transition: background 0.2s, border-color 0.2s;
@@ -70,8 +70,8 @@
 }
 
 .pill-selector-btn:hover {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .pill-selector-value {
@@ -90,7 +90,7 @@
 
 .pill-dropdown {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 6px);
     left: 0;
     right: 0;
     z-index: 200;
@@ -99,8 +99,12 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    background: rgba(28, 28, 32, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
     overflow: hidden;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 .pill-option {
