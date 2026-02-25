@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ArrowUp, AudioLines, X, FileText, Image } from 'lucide-react';
 
-const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
+const PromptBar = ({ onSend, isInitial, setVoiceMode, sidebarOpen = false }) => {
     const [input, setInput] = useState('');
     const [attachments, setAttachments] = useState([]);
     const fileInputRef = useRef(null);
@@ -44,9 +44,14 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
     // KEY FIX: Always at bottom: 32px (same coordinate system)
     // When initial, lift it up using translateY in the SAME unit (vh)
     // No bottom % <-> bottom px switching = no teleport
+    // Also adjust x position based on sidebar state
     const promptBarY = isInitial
         ? 'calc(-50vh + 50%)'  // Moves bar to vertical center from its bottom position
         : '0px';               // Stays at the bottom
+
+    // Sidebar takes ~304px (280px width + 24px margin)
+    // When sidebar is open, shift prompt bar to the right by ~120px for better centering
+    const sidebarOffset = sidebarOpen ? 120 : 0;
 
     return (
         <motion.div
@@ -55,10 +60,12 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
             initial={false}
             animate={{
                 y: promptBarY,
+                marginLeft: sidebarOffset,
                 width: isInitial ? 'min(600px, 90%)' : 'min(850px, 92%)',
             }}
             transition={{
-                y: { type: 'spring', damping: 32, stiffness: 120, mass: 1 },
+                marginLeft: { type: 'spring', damping: 28, stiffness: 200 },
+                y: { type: 'spring', damping: 40, stiffness: 300, mass: 0.8 },
                 width: { type: 'spring', damping: 32, stiffness: 120, mass: 1 },
                 layout: { type: 'spring', damping: 32, stiffness: 120 }
             }}
