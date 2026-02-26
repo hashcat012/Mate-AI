@@ -13,8 +13,12 @@
 .welcome-text-container h1 {
     font-size: 2.2rem;
     font-weight: 500;
-    color: white;
+    color: var(--text-main);
     letter-spacing: -1px;
+}
+
+[data-theme="light"] .welcome-text-container h1 {
+    color: var(--text-main);
 }
 
 .prompt-controls-wrapper {
@@ -56,7 +60,7 @@
     flex: 1;
     background: transparent;
     border: none;
-    color: white;
+    color: var(--text-main);
     padding: 12px 0;
     font-size: 1rem;
     outline: none;
@@ -69,7 +73,7 @@
 }
 
 .prompt-form textarea::placeholder {
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--text-muted);
 }
 
 .prompt-form textarea::-webkit-scrollbar {

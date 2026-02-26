@@ -12,6 +12,10 @@
     z-index: 5000;
 }
 
+[data-theme="light"] .auth-overlay {
+    background: rgba(0, 0, 0, 0.5);
+}
+
 .auth-modal {
     width: 400px;
     padding: 40px;
@@ -27,6 +31,10 @@
     border: none;
     color: var(--text-muted);
     cursor: pointer;
+}
+
+[data-theme="light"] .close-btn {
+    color: rgba(0, 0, 0, 0.5);
 }
 
 .auth-modal h2 {
@@ -87,12 +95,20 @@
     border: 1px solid var(--border-glass);
 }
 
+[data-theme="light"] .input-group {
+    background: rgba(0, 0, 0, 0.03);
+}
+
 .input-group input {
     background: transparent;
     border: none;
     color: white;
     width: 100%;
     outline: none;
+}
+
+[data-theme="light"] .input-group input {
+    color: #111;
 }
 
 .submit-btn {

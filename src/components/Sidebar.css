@@ -27,11 +27,20 @@
     opacity: 1;
 }
 
+[data-theme="light"] .logo-flower {
+    color: #111;
+}
+
 .logo-text {
     font-size: 1.2rem;
     font-weight: 600;
     letter-spacing: -0.5px;
     margin: 0;
+    color: white;
+}
+
+[data-theme="light"] .logo-text {
+    color: #111;
 }
 
 .new-chat-btn {
@@ -86,6 +95,12 @@
     color: white;
 }
 
+[data-theme="light"] .chat-item:hover,
+[data-theme="light"] .chat-item.active {
+    background: rgba(0, 0, 0, 0.05);
+    color: #111;
+}
+
 .chat-title {
     flex: 1;
     white-space: nowrap;
@@ -135,8 +150,16 @@
     transition: background 0.2s;
 }
 
+[data-theme="light"] .option-item {
+    color: #111;
+}
+
 .option-item:hover {
     background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .option-item:hover {
+    background: rgba(0, 0, 0, 0.08);
 }
 
 .option-item.delete {
@@ -158,9 +181,18 @@
     outline: none;
 }
 
+[data-theme="light"] .rename-input {
+    background: rgba(0, 0, 0, 0.05);
+    color: #111;
+}
+
 .pin-icon-inline {
     margin-right: 6px;
     color: #fff;
+}
+
+[data-theme="light"] .pin-icon-inline {
+    color: #111;
 }
 
 .no-chats {
@@ -219,6 +251,10 @@
 
 .profile-section:hover {
     background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="light"] .profile-section:hover {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .settings-icon {

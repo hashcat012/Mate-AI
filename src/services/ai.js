@@ -16,9 +16,10 @@ const isImageFile = (file) => {
     return file && file.type && file.type.startsWith('image/');
 };
 
-export const getAICompletion = async (messages, attachments = []) => {
-    if (!GROQ_API_KEY) {
-        return "Hata: API anahtarı bulunamadı (.env dosyasını kontrol et).";
+export const getAICompletion = async (messages, attachments = [], customApiKey = null) => {
+    const apiKey = customApiKey || GROQ_API_KEY;
+    if (!apiKey) {
+        return "Hata: API anahtarı bulunamadı. Ayarlardan API anahtarı ekleyin.";
     }
 
     // Process attachments - convert images to base64
@@ -73,7 +74,7 @@ export const getAICompletion = async (messages, attachments = []) => {
 
         // Use vision model if images present
         const body = {
-            model: imageContents.length > 0 ? "meta-llama/llama-4-scout-17b-16e-instruct" : "llama-3.3-70b-versatile",
+            model: imageContents.length > 0 ? "meta-llama/llama-4-maverick-17b-128e-instruct" : "llama-3.3-70b-versatile",
             messages: formattedMessages.map((m, i) => {
                 // Last user message with attachments
                 if (i === formattedMessages.length - 1 && m.role === 'user') {
@@ -88,7 +89,7 @@ export const getAICompletion = async (messages, attachments = []) => {
             max_tokens: 8192
         };
 
-        return sendRequest(body);
+        return sendRequest(body, apiKey);
     }
 
     // Regular text-only request
@@ -99,16 +100,16 @@ export const getAICompletion = async (messages, attachments = []) => {
         max_tokens: 8192
     };
 
-    return sendRequest(body);
+    return sendRequest(body, apiKey);
 };
 
-const sendRequest = async (body) => {
+const sendRequest = async (body, apiKey) => {
     try {
         const res = await fetch(GROQ_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${GROQ_API_KEY}`
+                "Authorization": `Bearer ${apiKey}`
             },
             body: JSON.stringify(body)
         });

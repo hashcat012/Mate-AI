@@ -91,17 +91,31 @@ function App() {
   // Settings state
   const [persona, setPersona] = useState(() => {
     const saved = localStorage.getItem('mate_ai_persona');
-    return saved ? JSON.parse(saved) : { id: 'normal', name: 'Normal', prompt: 'Sen yardımsever, zeki ve dürüst bir yapay zeka asistanısın. Kullanıcı senden uygulama, website, oyun, sayfa, buton, form, menü, slider, galeri, hesap makinesi, saat, takvim, liste, tablo, kart, modal, popup, animasyon, efekt, tasarım, şablon, tema, component, fonksiyon, script, program, tool, araç, oyun veya herhangi bir dijital ürün yapmanı istediğinde, hemen kod yazmaya başla. "Yap", "oluştur", "tasarla", "yaz", "kodla", "geliştir", "build et", "implement et" gibi kelimeler geçiyorsa direkt kod yaz. Asla "bilgi vermem gerekiyor" veya "detayları belirleyelim" gibi şeyler söyleme. Doğrudan çalışan, tam kod yaz. HTML, CSS, JavaScript kullanarak tam çalışan uygulamalar oluştur. Kısa açıklama yaz, sonra hemen kod blokları ile kodu ver.' };
+    return saved ? JSON.parse(saved) : { id: 'normal', name: 'Normal', prompt: 'Sen Mate AI\'sın — yardımsever, zeki ve dürüst bir yapay zeka asistanısın. Kullanıcıların sorularını, isteklerini ve konuşmalarını doğal bir şekilde yanıtla. Genel bilgi, tavsiye, analiz, yaratıcı yazarlık, dil, matematik, bilim, tarih ve daha fazlası dahil her konuda yardımcı ol. Kullanıcı açıkça kod yazmanı, uygulama veya program oluşturmanı istemediği sürece kod yazma. Sadece sohbet et, açıkla ve yardımcı ol. Eğer kullanıcı kim olduğunu sorarsa, Mate AI olduğunu ve Groq altyapısı üzerinde çalışan bir yapay zeka asistanı olduğunu söyle. Yanıtların kısa, net ve kullanıcıya faydalı olsun.' };
   });
 
   const [language, setLanguage] = useState(() => {
     return localStorage.getItem('mate_ai_language') || 'tr-TR';
   });
 
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('mate_ai_theme');
+    return saved || 'dark';
+  });
+
+  const [apiKey, setApiKey] = useState(() => {
+    return localStorage.getItem('mate_ai_api_key') || '';
+  });
+
   const chatIdRef = useRef(null);
   const messagesRef = useRef([]);
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  // Apply theme to document
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -160,7 +174,7 @@ function App() {
     }]);
 
     // Pass attachments to AI for vision processing
-    const aiText = await getAICompletion(aiMessages, attachments).catch(e => "Hata: " + e.message);
+    const aiText = await getAICompletion(aiMessages, attachments, apiKey).catch(e => "Hata: " + e.message);
     setMessages(prev => [...prev, { text: aiText, sender: 'ai', timestamp: new Date() }]);
 
     // Auto-open code editor if response contains code blocks
@@ -199,7 +213,7 @@ function App() {
         const titleResponse = await getAICompletion([
           { role: 'system', content: 'Sadece 2-4 kelimelik kısa bir başlık yaz. Başka hiçbir şey ekleme.' },
           { role: 'user', content: userText }
-        ]);
+        ], [], apiKey);
         const title = titleResponse?.trim().replace(/^"|"$/g, '').slice(0, 50) || userText.slice(0, 35);
         const ref = await addDoc(collection(db, 'chats'), {
           userId: user.uid,
@@ -240,7 +254,7 @@ function App() {
         content: m.text
       }))
     ];
-    const newAiText = await getAICompletion(history).catch(e => 'Hata: ' + e.message);
+    const newAiText = await getAICompletion(history, [], apiKey).catch(e => 'Hata: ' + e.message);
     setMessages(prev => {
       const updated = [...prev];
       updated.splice(aiMsgIndex, 0, { text: newAiText, sender: 'ai', timestamp: new Date() });
@@ -279,9 +293,21 @@ function App() {
     }
   };
 
-  const handleSaveSettings = ({ persona: newPersona, language: newLang }) => {
+  const handleSaveSettings = ({ persona: newPersona, language: newLang, theme: newTheme, apiKey: newApiKey }) => {
     setPersona(newPersona);
     setLanguage(newLang);
+    if (newTheme) {
+      setTheme(newTheme);
+      localStorage.setItem('mate_ai_theme', newTheme);
+    }
+    if (newApiKey !== undefined) {
+      setApiKey(newApiKey);
+      if (newApiKey) {
+        localStorage.setItem('mate_ai_api_key', newApiKey);
+      } else {
+        localStorage.removeItem('mate_ai_api_key');
+      }
+    }
     localStorage.setItem('mate_ai_persona', JSON.stringify(newPersona));
     localStorage.setItem('mate_ai_language', newLang);
   };
@@ -361,6 +387,8 @@ function App() {
               user={user}
               currentPersona={persona}
               currentLanguage={language}
+              currentTheme={theme}
+              currentApiKey={apiKey}
               onSaveSettings={handleSaveSettings}
               onClose={() => setShowProfile(false)}
             />
@@ -407,6 +435,7 @@ function App() {
             messages={messages}
             persona={persona}
             language={language}
+            apiKey={apiKey}
             onSend={handleVoiceSync}
             onClose={() => setVoiceMode(false)}
           />

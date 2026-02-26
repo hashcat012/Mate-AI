@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Save, Trash2, LogOut, Sparkles, ChevronDown } from 'lucide-react';
+import { X, User, Save, Trash2, LogOut, Sparkles, ChevronDown, Sun, Moon } from 'lucide-react';
 import { updateProfile, deleteUser, signOut } from 'firebase/auth';
 
 const personas = [
-    { id: 'normal', name: 'Klasik', prompt: 'Sen yardımsever, zeki ve dürüst bir yapay zeka asistanısın. Kullanıcı senden uygulama, website, oyun, sayfa, buton, form, menü, slider, galeri, hesap makinesi, saat, takvim, liste, tablo, kart, modal, popup, animasyon, efekt, tasarım, şablon, tema, component, fonksiyon, script, program, tool, araç, oyun veya herhangi bir dijital ürün yapmanı istediğinde, hemen kod yazmaya başla. Doğrudan çalışan, tam kod yaz.' },
+    { id: 'normal', name: 'Klasik', prompt: 'Sen Mate AI\'sın — yardımsever, zeki ve dürüst bir yapay zeka asistanısın. Kullanıcıların sorularını, isteklerini ve konuşmalarını doğal bir şekilde yanıtla. Genel bilgi, tavsiye, analiz, yaratıcı yazarlık, dil, matematik, bilim, tarih ve daha fazlası dahil her konuda yardımcı ol. Kullanıcı açıkça kod yazmanı, uygulama veya program oluşturmanı istemediği sürece kod yazma. Sadece sohbet et, açıkla ve yardımcı ol.' },
     { id: 'genius', name: 'Zeki & Analitik', prompt: 'Sen son derece zeki, analitik ve detaylara odaklanan bir bilim insanı gibisin. Teknik terimler kullanmaktan çekinme. Verilere ve kanıtlara dayalı, mantıklı ve sistematik düşün.' },
     { id: 'funny', name: 'Eğlenceli & Esprili', prompt: 'Sen çok eğlenceli, esprili ve sürekli şaka yapan bir asistansın. Her cevabında mizah olsun. Konuşmayı neşeli ve hafif tut.' },
     { id: 'blunt', name: 'Sert & Dobra', prompt: 'Sen çok dobra, kısa ve öz konuşan birisin. Lafı hiç dolandırmazsın, bazen sert olabilirsin. Gereksiz nezaket yok.' },
@@ -18,14 +18,23 @@ const languages = [
     { id: 'fr-FR', name: 'Français', flag: '🇫🇷' }
 ];
 
-const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClose }) => {
+const apiOptions = [
+    { id: 'default', name: 'Varsayılan' },
+    { id: 'custom', name: 'Kendi API\'nizi Girin' }
+];
+
+const Profile = ({ user, currentPersona, currentLanguage, currentTheme, currentApiKey, onSaveSettings, onClose }) => {
     const [displayName, setDisplayName] = useState(user?.displayName || '');
     const [selectedPersona, setSelectedPersona] = useState(currentPersona?.id || 'normal');
     const [customPrompt, setCustomPrompt] = useState(currentPersona?.id === 'custom' ? currentPersona.prompt : '');
     const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage || 'tr-TR');
+    const [selectedTheme, setSelectedTheme] = useState(currentTheme || 'dark');
+    const [selectedApi, setSelectedApi] = useState(currentApiKey ? 'custom' : 'default');
+    const [customApiKey, setCustomApiKey] = useState(currentApiKey || '');
     const [isSaving, setIsSaving] = useState(false);
     const [langOpen, setLangOpen] = useState(false);
     const [personaOpen, setPersonaOpen] = useState(false);
+    const [apiOpen, setApiOpen] = useState(false);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -42,7 +51,8 @@ const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClos
                 personaData = p;
             }
 
-            onSaveSettings({ persona: personaData, language: selectedLanguage });
+            const apiKeyToSave = selectedApi === 'custom' ? customApiKey.trim() : null;
+            onSaveSettings({ persona: personaData, language: selectedLanguage, theme: selectedTheme, apiKey: apiKeyToSave });
             onClose();
         } catch (e) {
             console.error(e);
@@ -65,6 +75,7 @@ const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClos
 
     const currentLang = languages.find(l => l.id === selectedLanguage);
     const currentPersonaObj = personas.find(p => p.id === selectedPersona);
+    const currentApiObj = apiOptions.find(a => a.id === selectedApi);
 
     return (
         <div className="auth-overlay">
@@ -139,6 +150,26 @@ const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClos
                         </div>
                     </div>
 
+                    {/* Theme Toggle - Dark/Light */}
+                    <div className="profile-section-group">
+                        <label>Tema</label>
+                        <div className="theme-toggle-switch-wrapper">
+                            <span className={`theme-icon ${selectedTheme === 'dark' ? 'active' : ''}`}>
+                                <Moon size={14} />
+                            </span>
+                            <button
+                                className={`theme-toggle-switch ${selectedTheme}`}
+                                onClick={() => setSelectedTheme(selectedTheme === 'dark' ? 'light' : 'dark')}
+                                aria-label="Tema değiştir"
+                            >
+                                <span className="theme-toggle-thumb" />
+                            </button>
+                            <span className={`theme-icon ${selectedTheme === 'light' ? 'active' : ''}`}>
+                                <Sun size={14} />
+                            </span>
+                        </div>
+                    </div>
+
                     {/* Persona Selector - Pill Style */}
                     <div className="profile-section-group">
                         <label>Mate AI Kişiliği</label>
@@ -175,7 +206,7 @@ const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClos
                                                 className={`pill-option ${selectedPersona === p.id ? 'active' : ''}`}
                                                 onClick={() => {
                                                     setSelectedPersona(p.id);
-                                                    if (p.id !== 'custom') setPersonaOpen(false);
+                                                    setPersonaOpen(false);
                                                 }}
                                             >
                                                 <Sparkles size={13} />
@@ -208,6 +239,82 @@ const Profile = ({ user, currentPersona, currentLanguage, onSaveSettings, onClos
                                         <div className="custom-persona-action">
                                             <div className="persona-type-badge visible">
                                                 <Sparkles size={12} /> Özel Mod Aktif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* API Key Selector */}
+                    <div className="profile-section-group">
+                        <label>API Anahtarı</label>
+                        <div className="pill-selector-wrapper">
+                            <button
+                                className="pill-selector-btn"
+                                onClick={() => { setApiOpen(!apiOpen); setLangOpen(false); setPersonaOpen(false); }}
+                            >
+                                <span className="pill-selector-value">
+                                    <span>{currentApiObj?.name || 'Varsayılan (Groq)'}</span>
+                                </span>
+                                <motion.span
+                                    animate={{ rotate: apiOpen ? 180 : 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="pill-chevron"
+                                >
+                                    <ChevronDown size={16} />
+                                </motion.span>
+                            </button>
+                            <AnimatePresence>
+                                {apiOpen && (
+                                    <motion.div
+                                        className="pill-dropdown"
+                                        initial={{ opacity: 0, y: -8, scaleY: 0.9 }}
+                                        animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                                        exit={{ opacity: 0, y: -8, scaleY: 0.9 }}
+                                        transition={{ duration: 0.18 }}
+                                        style={{ transformOrigin: 'top center' }}
+                                    >
+                                        {apiOptions.map((api) => (
+                                            <button
+                                                key={api.id}
+                                                className={`pill-option ${selectedApi === api.id ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setSelectedApi(api.id);
+                                                    setApiOpen(false);
+                                                }}
+                                            >
+                                                <span>{api.name}</span>
+                                            </button>
+                                        ))}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Custom API Key Input */}
+                        <AnimatePresence>
+                            {selectedApi === 'custom' && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="custom-apikey-wrapper"
+                                >
+                                    <div className="custom-apikey-input-container active">
+                                        <input
+                                            type="password"
+                                            className="custom-apikey-input"
+                                            placeholder="Groq API anahtarınızı girin..."
+                                            value={customApiKey}
+                                            onChange={(e) => setCustomApiKey(e.target.value)}
+                                            autoFocus
+                                        />
+                                        <div className="custom-apikey-action">
+                                            <div className="apikey-type-badge visible">
+                                                <Sparkles size={12} /> Özel API Aktif
                                             </div>
                                         </div>
                                     </div>

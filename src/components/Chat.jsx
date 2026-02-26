@@ -8,6 +8,52 @@ import {
     RotateCcw, Volume2, VolumeX, FileText, Code2
 } from 'lucide-react';
 
+// ── Typewriter Component ────────────────────────────────────────────────
+const TypewriterText = ({ text, onComplete }) => {
+    const [displayedText, setDisplayedText] = useState('');
+    const [isComplete, setIsComplete] = useState(false);
+    const intervalRef = useRef(null);
+
+    useEffect(() => {
+        // Reset when text changes
+        setDisplayedText('');
+        setIsComplete(false);
+
+        let currentIndex = 0;
+        // Random speed between 15-35ms for natural feel
+        const getRandomSpeed = () => Math.floor(Math.random() * 20) + 15;
+        let currentSpeed = getRandomSpeed();
+
+        intervalRef.current = setInterval(() => {
+            if (currentIndex < text.length) {
+                setDisplayedText(text.slice(0, currentIndex + 1));
+                currentIndex++;
+
+                // Vary the speed occasionally for natural feel
+                if (currentIndex % 5 === 0) {
+                    currentSpeed = getRandomSpeed();
+                }
+            } else {
+                clearInterval(intervalRef.current);
+                setIsComplete(true);
+                if (onComplete) onComplete();
+            }
+        }, currentSpeed);
+
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+            }
+        };
+    }, [text, onComplete]);
+
+    return (
+        <>
+            {displayedText}
+        </>
+    );
+};
+
 // ── Code Block with Copy Button ─────────────────────────────────
 const CodeBlock = ({ language, children }) => {
     const [copied, setCopied] = useState(false);
@@ -155,88 +201,133 @@ const MessageActions = ({ text, onRegenerate, index, onOpenCodeEditor }) => {
     );
 };
 
-// ── Main Chat Component ──────────────────────────────────────────
+// ── Main Chat Component ────────────────────────────────────────────────
 const Chat = ({ messages, isInitial, onRegenerate, onOpenCodeEditor }) => {
     const bottomRef = useRef(null);
+    const [typingMessageId, setTypingMessageId] = useState(null);
+    const [completedTyping, setCompletedTyping] = useState({});
+    const prevMessagesLength = useRef(0);
+    const animatedMessages = useRef(new Set());
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // Reset typing state when chat changes (messages array is completely different)
+    useEffect(() => {
+        // If messages length changed significantly or messages are different, reset
+        if (messages.length !== prevMessagesLength.current) {
+            // Only animate if a new AI message was just added
+            if (messages.length > prevMessagesLength.current && messages.length > 0) {
+                const lastMsg = messages[messages.length - 1];
+                const msgId = lastMsg.id || `msg-${messages.length - 1}`;
+                // Only animate if not already animated
+                if (lastMsg.sender === 'ai' && lastMsg.text && !animatedMessages.current.has(msgId)) {
+                    setTypingMessageId(msgId);
+                }
+            }
+            prevMessagesLength.current = messages.length;
+        }
+    }, [messages]);
+
+    const handleTypingComplete = (msgId) => {
+        setCompletedTyping(prev => ({ ...prev, [msgId]: true }));
+        animatedMessages.current.add(msgId);
+    };
+
     if (isInitial && messages.length === 0) {
-        return <div className="chat-messages-container" />;
+        return <div className="chat-messages-container"><div className="chat-messages-inner" /></div>;
     }
 
     return (
         <motion.div layout className="chat-messages-container">
-            <AnimatePresence>
-                {messages.map((msg, index) => (
-                    <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className={`message-wrapper ${msg.sender}`}
-                    >
-                        <div className={`message-bubble ${msg.sender === 'ai' ? 'liquid-glass' : 'user-bubble'}`}>
-                            {/* Display attachments (images) */}
-                            {msg.attachments && msg.attachments.length > 0 && (
-                                <div className="message-attachments">
-                                    {msg.attachments.map((att, attIndex) => (
-                                        att.preview ? (
-                                            <div key={attIndex} className="message-image-container">
-                                                <img
-                                                    src={att.preview}
-                                                    alt={att.name}
-                                                    className="message-attached-image"
+            <div className="chat-messages-inner">
+                <AnimatePresence>
+                    {messages.map((msg, index) => {
+                        const msgId = msg.id || `msg-${index}`;
+                        const isTyping = msg.sender === 'ai' && msgId === typingMessageId && !completedTyping[msgId];
+                        const isLastAiMessage = msg.sender === 'ai' && index === messages.length - 1;
+                        const wasAlreadyAnimated = animatedMessages.current.has(msgId);
+                        const shouldType = isLastAiMessage && !completedTyping[msgId] && !wasAlreadyAnimated;
+
+                        return (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.25 }}
+                                className={`message-wrapper ${msg.sender}`}
+                            >
+                                <div className={`message-bubble ${msg.sender === 'ai' ? 'liquid-glass' : 'user-bubble'}`}>
+                                    {/* Display attachments (images) */}
+                                    {msg.attachments && msg.attachments.length > 0 && (
+                                        <div className="message-attachments">
+                                            {msg.attachments.map((att, attIndex) => (
+                                                att.preview ? (
+                                                    <div key={attIndex} className="message-image-container">
+                                                        <img
+                                                            src={att.preview}
+                                                            alt={att.name}
+                                                            className="message-attached-image"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div key={attIndex} className="message-file-container">
+                                                        <FileText size={16} />
+                                                        <span>{att.name}</span>
+                                                    </div>
+                                                )
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Display text content with typewriter for AI messages */}
+                                    {msg.text && !msg.text.match(/^\[.*\]$/) && (
+                                        shouldType && msg.sender === 'ai' ? (
+                                            <div className="message-text typewriter">
+                                                <TypewriterText
+                                                    text={msg.text.replace(/\[.*?\]/g, '').trim()}
+                                                    onComplete={() => handleTypingComplete(msgId)}
                                                 />
                                             </div>
                                         ) : (
-                                            <div key={attIndex} className="message-file-container">
-                                                <FileText size={16} />
-                                                <span>{att.name}</span>
-                                            </div>
+                                            <ReactMarkdown
+                                                components={{
+                                                    code({ node, inline, className, children, ...props }) {
+                                                        const match = /language-(\w+)/.exec(className || '');
+                                                        return !inline && match ? (
+                                                            <CodeBlock language={match[1]}>
+                                                                {children}
+                                                            </CodeBlock>
+                                                        ) : (
+                                                            <code className={className} {...props}>
+                                                                {children}
+                                                            </code>
+                                                        );
+                                                    }
+                                                }}
+                                            >
+                                                {msg.text.replace(/\[.*?\]/g, '').trim()}
+                                            </ReactMarkdown>
                                         )
-                                    ))}
+                                    )}
+
+                                    {/* Action bar only for AI messages - show after typing complete */}
+                                    {msg.sender === 'ai' && (!shouldType || completedTyping[msgId]) && (
+                                        <MessageActions
+                                            text={msg.text}
+                                            index={index}
+                                            onRegenerate={onRegenerate}
+                                            onOpenCodeEditor={onOpenCodeEditor}
+                                        />
+                                    )}
                                 </div>
-                            )}
-
-                            {/* Display text content - remove file names from display */}
-                            {msg.text && !msg.text.match(/^\[.*\]$/) && (
-                                <ReactMarkdown
-                                    components={{
-                                        code({ node, inline, className, children, ...props }) {
-                                            const match = /language-(\w+)/.exec(className || '');
-                                            return !inline && match ? (
-                                                <CodeBlock language={match[1]}>
-                                                    {children}
-                                                </CodeBlock>
-                                            ) : (
-                                                <code className={className} {...props}>
-                                                    {children}
-                                                </code>
-                                            );
-                                        }
-                                    }}
-                                >
-                                    {msg.text.replace(/\[.*?\]/g, '').trim()}
-                                </ReactMarkdown>
-                            )}
-
-                            {/* Action bar only for AI messages */}
-                            {msg.sender === 'ai' && (
-                                <MessageActions
-                                    text={msg.text}
-                                    index={index}
-                                    onRegenerate={onRegenerate}
-                                    onOpenCodeEditor={onOpenCodeEditor}
-                                />
-                            )}
-                        </div>
-                    </motion.div>
-                ))}
-            </AnimatePresence>
-            <div ref={bottomRef} />
+                            </motion.div>
+                        );
+                    })}
+                </AnimatePresence>
+                <div ref={bottomRef} />
+            </div>
         </motion.div>
     );
 };

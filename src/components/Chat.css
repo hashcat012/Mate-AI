@@ -17,13 +17,21 @@
 .chat-messages-container {
     flex: 1;
     overflow-y: auto;
-    padding: 80px 20px 200px 20px;
+    padding: 80px 0 200px 0;
     display: flex;
     flex-direction: column;
     gap: 24px;
+    width: 100%;
+}
+
+.chat-messages-inner {
     max-width: 860px;
     width: 100%;
     margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
 .message-wrapper {
@@ -57,6 +65,15 @@
     background: rgba(255, 255, 255, 0.07);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-bottom-right-radius: 4px;
+}
+
+[data-theme="light"] .user-bubble {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.message-bubble {
+    color: var(--text-main);
 }
 
 .message-bubble pre {
@@ -139,10 +156,24 @@
     transition: all 0.18s;
 }
 
+[data-theme="light"] .action-btn {
+    color: rgba(0, 0, 0, 0.35);
+}
+
 .action-btn:hover {
     background: rgba(255, 255, 255, 0.08);
     color: rgba(255, 255, 255, 0.75);
     border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .action-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.75);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .message-actions {
+    border-top-color: rgba(0, 0, 0, 0.06);
 }
 
 .action-btn.active-like {
@@ -245,6 +276,16 @@
     color: rgba(255, 255, 255, 0.8);
 }
 
+[data-theme="light"] .message-file-container {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="light"] .message-image-container {
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
 /* Mobile styles for attachments */
 @media (max-width: 768px) {
     .message-image-container {
@@ -254,4 +295,11 @@
     .message-attached-image {
         max-height: 200px;
     }
+}
+
+/* ── Typewriter Effect ─────────────────── */
+.message-text.typewriter {
+    color: var(--text-main);
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
