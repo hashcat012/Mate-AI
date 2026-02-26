@@ -307,7 +307,7 @@ const Profile = ({ user, currentPersona, currentLanguage, currentTheme, currentA
                                         <input
                                             type="password"
                                             className="custom-apikey-input"
-                                            placeholder="Groq API anahtarınızı girin..."
+                                            placeholder="Api anahtarınızı girin..."
                                             value={customApiKey}
                                             onChange={(e) => setCustomApiKey(e.target.value)}
                                             autoFocus
