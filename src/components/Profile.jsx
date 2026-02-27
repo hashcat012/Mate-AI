@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Save, Trash2, LogOut, Sparkles, ChevronDown, Sun, Moon } from 'lucide-react';
+import { X, User, Trash2, LogOut, Sparkles, ChevronDown, Sun, Moon } from 'lucide-react';
 import { updateProfile, deleteUser, signOut } from 'firebase/auth';
 
 const personas = [
@@ -18,49 +18,74 @@ const languages = [
     { id: 'fr-FR', name: 'Français', flag: '🇫🇷' }
 ];
 
-const apiOptions = [
-    { id: 'default', name: 'Varsayılan' },
-    { id: 'custom', name: 'Kendi API\'nizi Girin' }
+const providers = [
+    { id: 'groq', name: 'Groq' },
+    { id: 'openai', name: 'OpenAI' },
+    { id: 'openrouter', name: 'OpenRouter' },
+    { id: 'gemini', name: 'Gemini' },
+    { id: 'grok', name: 'Grok' },
+    { id: 'deepseek', name: 'DeepSeek' },
+    { id: 'claude', name: 'Claude' }
 ];
 
-const Profile = ({ user, currentPersona, currentLanguage, currentTheme, currentApiKey, onSaveSettings, onClose }) => {
+const Profile = ({ user, currentPersona, currentLanguage, currentTheme, currentApiKey, currentProvider, onSaveSettings, onClose }) => {
     const [displayName, setDisplayName] = useState(user?.displayName || '');
     const [selectedPersona, setSelectedPersona] = useState(currentPersona?.id || 'normal');
     const [customPrompt, setCustomPrompt] = useState(currentPersona?.id === 'custom' ? currentPersona.prompt : '');
     const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage || 'tr-TR');
     const [selectedTheme, setSelectedTheme] = useState(currentTheme || 'dark');
-    const [selectedApi, setSelectedApi] = useState(currentApiKey ? 'custom' : 'default');
+    const [selectedProvider, setSelectedProvider] = useState(currentProvider || 'groq');
+    const [useCustomApi, setUseCustomApi] = useState(!!currentApiKey);
     const [customApiKey, setCustomApiKey] = useState(currentApiKey || '');
-    const [isSaving, setIsSaving] = useState(false);
+    const [providerOpen, setProviderOpen] = useState(false);
     const [langOpen, setLangOpen] = useState(false);
     const [personaOpen, setPersonaOpen] = useState(false);
-    const [apiOpen, setApiOpen] = useState(false);
+    const [error, setError] = useState('');
+    const [displayNameTimeout, setDisplayNameTimeout] = useState(null);
 
-    const handleSave = async () => {
-        setIsSaving(true);
-        try {
-            if (displayName !== user.displayName) {
-                await updateProfile(user, { displayName });
-            }
-
-            let personaData;
-            if (selectedPersona === 'custom') {
-                personaData = { id: 'custom', name: 'Özel', prompt: customPrompt };
-            } else {
-                const p = personas.find(p => p.id === selectedPersona);
-                personaData = p;
-            }
-
-            const apiKeyToSave = selectedApi === 'custom' ? customApiKey.trim() : null;
-            onSaveSettings({ persona: personaData, language: selectedLanguage, theme: selectedTheme, apiKey: apiKeyToSave });
-            onClose();
-        } catch (e) {
-            console.error(e);
-            alert("Hata oluştu: " + e.message);
-        } finally {
-            setIsSaving(false);
+    // Auto-save local settings (persona, language, theme, provider, custom API)
+    useEffect(() => {
+        let personaData;
+        if (selectedPersona === 'custom') {
+            personaData = { id: 'custom', name: 'Özel', prompt: customPrompt };
+        } else {
+            const p = personas.find(p => p.id === selectedPersona);
+            personaData = p;
         }
-    };
+        const apiKeyToSave = useCustomApi ? customApiKey.trim() : null;
+        onSaveSettings({
+            persona: personaData,
+            language: selectedLanguage,
+            theme: selectedTheme,
+            apiKey: apiKeyToSave,
+            provider: selectedProvider
+        });
+    }, [selectedPersona, customPrompt, selectedLanguage, selectedTheme, selectedProvider, useCustomApi, customApiKey, onSaveSettings]);
+
+    // Debounced save for displayName to Firebase
+    useEffect(() => {
+        if (displayNameTimeout) clearTimeout(displayNameTimeout);
+        const timeout = setTimeout(() => {
+            if (displayName !== user.displayName) {
+                updateProfile(user, { displayName }).catch(err => {
+                    console.error('Display name update failed:', err);
+                    setError('Görünen ad güncellenemedi.');
+                });
+            }
+        }, 500);
+        setDisplayNameTimeout(timeout);
+        return () => clearTimeout(timeout);
+    }, [displayName, user]);
+
+    // Clear error when user fixes the issue
+    useEffect(() => {
+        if (error && useCustomApi && customApiKey.trim()) {
+            setError('');
+        }
+        if (error && !useCustomApi) {
+            setError('');
+        }
+    }, [error, useCustomApi, customApiKey]);
 
     const handleDeleteAccount = async () => {
         if (window.confirm("Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
@@ -73,24 +98,41 @@ const Profile = ({ user, currentPersona, currentLanguage, currentTheme, currentA
         }
     };
 
+    const handleClose = (e) => {
+        // Validation: if custom API is enabled but key is empty, prevent close
+        if (useCustomApi && !customApiKey.trim()) {
+            setError('Özel API kullanmak için API anahtarı girmelisiniz.');
+            return;
+        }
+        setError('');
+        onClose();
+    };
+
     const currentLang = languages.find(l => l.id === selectedLanguage);
     const currentPersonaObj = personas.find(p => p.id === selectedPersona);
-    const currentApiObj = apiOptions.find(a => a.id === selectedApi);
+    const currentProviderObj = providers.find(p => p.id === selectedProvider);
 
     return (
-        <div className="auth-overlay">
+        <div className="auth-overlay" onClick={handleClose}>
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="profile-modal liquid-glass"
+                onClick={e => e.stopPropagation()}
             >
                 <div className="profile-modal-header">
                     <h2>Profil Ayarları</h2>
-                    <button className="close-btn" onClick={onClose}><X size={20} /></button>
+                    <button className="close-btn" onClick={handleClose}><X size={20} /></button>
                 </div>
 
                 <div className="profile-scroll-area">
+                    {error && (
+                        <div className="error-message" style={{ color: '#ff4444', padding: '8px 12px', marginBottom: '12px', background: 'rgba(255,0,0,0.1)', borderRadius: '8px' }}>
+                            {error}
+                        </div>
+                    )}
+
                     <div className="profile-section-group">
                         <label>Görünen Ad</label>
                         <div className="input-group">
@@ -170,6 +212,99 @@ const Profile = ({ user, currentPersona, currentLanguage, currentTheme, currentA
                         </div>
                     </div>
 
+                    {/* Custom API Toggle */}
+                    <div className="profile-section-group">
+                        <label>API Anahtarı</label>
+                        <div className="custom-api-toggle" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <input
+                                type="checkbox"
+                                id="useCustomApi"
+                                checked={useCustomApi}
+                                onChange={(e) => setUseCustomApi(e.target.checked)}
+                                style={{ width: '16px', height: '16px' }}
+                            />
+                            <label htmlFor="useCustomApi" style={{ cursor: 'pointer', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                                Kendi API anahtarınızı kullanın
+                            </label>
+                        </div>
+
+                        {/* Show provider selector and API input only when custom is enabled */}
+                        <AnimatePresence>
+                            {useCustomApi && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {/* Provider Selector */}
+                                    <div className="pill-selector-wrapper" style={{ marginTop: '12px' }}>
+                                        <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px', display: 'block' }}>AI Sağlayıcı</label>
+                                        <button
+                                            className="pill-selector-btn"
+                                            onClick={() => { setProviderOpen(!providerOpen); setLangOpen(false); setPersonaOpen(false); }}
+                                        >
+                                            <span className="pill-selector-value">
+                                                <span>{currentProviderObj?.name || 'Groq'}</span>
+                                            </span>
+                                            <motion.span
+                                                animate={{ rotate: providerOpen ? 180 : 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="pill-chevron"
+                                            >
+                                                <ChevronDown size={16} />
+                                            </motion.span>
+                                        </button>
+                                        <AnimatePresence>
+                                            {providerOpen && (
+                                                <motion.div
+                                                    className="pill-dropdown"
+                                                    initial={{ opacity: 0, y: -8, scaleY: 0.9 }}
+                                                    animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                                                    exit={{ opacity: 0, y: -8, scaleY: 0.9 }}
+                                                    transition={{ duration: 0.18 }}
+                                                    style={{ transformOrigin: 'top center' }}
+                                                >
+                                                    {providers.map((p) => (
+                                                        <button
+                                                            key={p.id}
+                                                            className={`pill-option ${selectedProvider === p.id ? 'active' : ''}`}
+                                                            onClick={() => {
+                                                                setSelectedProvider(p.id);
+                                                                setProviderOpen(false);
+                                                            }}
+                                                        >
+                                                            <span>{p.name}</span>
+                                                        </button>
+                                                    ))}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+
+                                    {/* API Key Input */}
+                                    <div className="custom-apikey-wrapper" style={{ marginTop: '12px' }}>
+                                        <div className="custom-apikey-input-container active">
+                                            <input
+                                                type="password"
+                                                className="custom-apikey-input"
+                                                placeholder="API anahtarınızı girin..."
+                                                value={customApiKey}
+                                                onChange={(e) => setCustomApiKey(e.target.value)}
+                                                autoFocus
+                                            />
+                                            <div className="custom-apikey-action">
+                                                <div className="apikey-type-badge visible">
+                                                    <Sparkles size={12} /> Özel API Aktif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
                     {/* Persona Selector - Pill Style */}
                     <div className="profile-section-group">
                         <label>Mate AI Kişiliği</label>
@@ -247,88 +382,7 @@ const Profile = ({ user, currentPersona, currentLanguage, currentTheme, currentA
                         </AnimatePresence>
                     </div>
 
-                    {/* API Key Selector */}
-                    <div className="profile-section-group">
-                        <label>API Anahtarı</label>
-                        <div className="pill-selector-wrapper">
-                            <button
-                                className="pill-selector-btn"
-                                onClick={() => { setApiOpen(!apiOpen); setLangOpen(false); setPersonaOpen(false); }}
-                            >
-                                <span className="pill-selector-value">
-                                    <span>{currentApiObj?.name || 'Varsayılan (Groq)'}</span>
-                                </span>
-                                <motion.span
-                                    animate={{ rotate: apiOpen ? 180 : 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="pill-chevron"
-                                >
-                                    <ChevronDown size={16} />
-                                </motion.span>
-                            </button>
-                            <AnimatePresence>
-                                {apiOpen && (
-                                    <motion.div
-                                        className="pill-dropdown"
-                                        initial={{ opacity: 0, y: -8, scaleY: 0.9 }}
-                                        animate={{ opacity: 1, y: 0, scaleY: 1 }}
-                                        exit={{ opacity: 0, y: -8, scaleY: 0.9 }}
-                                        transition={{ duration: 0.18 }}
-                                        style={{ transformOrigin: 'top center' }}
-                                    >
-                                        {apiOptions.map((api) => (
-                                            <button
-                                                key={api.id}
-                                                className={`pill-option ${selectedApi === api.id ? 'active' : ''}`}
-                                                onClick={() => {
-                                                    setSelectedApi(api.id);
-                                                    setApiOpen(false);
-                                                }}
-                                            >
-                                                <span>{api.name}</span>
-                                            </button>
-                                        ))}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-
-                        {/* Custom API Key Input */}
-                        <AnimatePresence>
-                            {selectedApi === 'custom' && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="custom-apikey-wrapper"
-                                >
-                                    <div className="custom-apikey-input-container active">
-                                        <input
-                                            type="password"
-                                            className="custom-apikey-input"
-                                            placeholder="Api anahtarınızı girin..."
-                                            value={customApiKey}
-                                            onChange={(e) => setCustomApiKey(e.target.value)}
-                                            autoFocus
-                                        />
-                                        <div className="custom-apikey-action">
-                                            <div className="apikey-type-badge visible">
-                                                <Sparkles size={12} /> Özel API Aktif
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
                     <div className="profile-actions">
-                        <button className="sign-in-btn save-profile-btn" onClick={handleSave} disabled={isSaving}>
-                            <Save size={18} />
-                            <span>{isSaving ? 'Kaydediliyor...' : 'Ayarları Uygula'}</span>
-                        </button>
-
                         <div className="danger-zone">
                             <button className="danger-btn" onClick={() => signOut(user.auth)}>
                                 <LogOut size={16} />

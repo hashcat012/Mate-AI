@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mic, MicOff, Volume2, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { getAICompletion } from '../services/ai';
 
-const VoiceChat = ({ messages, persona, language, apiKey, onSend, onClose }) => {
+const VoiceChat = ({ messages, persona, language, apiKey, provider, onSend, onClose }) => {
     const [status, setStatus] = useState('initializing');
     const [transcript, setTranscript] = useState('');
     const [aiResponse, setAiResponse] = useState('');
@@ -143,7 +143,7 @@ const VoiceChat = ({ messages, persona, language, apiKey, onSend, onClose }) => 
         ];
 
         try {
-            const aiText = await getAICompletion(history, [], apiKey);
+            const aiText = await getAICompletion(history, [], apiKey, provider);
             if (!isActiveRef.current) return;
             setAiResponse(aiText);
             onSend(correctedText, aiText);
@@ -154,7 +154,7 @@ const VoiceChat = ({ messages, persona, language, apiKey, onSend, onClose }) => 
             isProcessingRef.current = false;
             setStatus('idle');
         }
-    }, [messages, persona, language, onSend, speakResponse, correctTranscript]);
+    }, [messages, persona, language, apiKey, provider, onSend, speakResponse, correctTranscript]);
 
     const toggleMic = useCallback(() => {
         if (status === 'listening') {

@@ -31,20 +31,37 @@
 .white-circle-outside {
     width: 48px;
     height: 48px;
-    background: white !important;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
     cursor: pointer;
-    border: none;
     flex-shrink: 0;
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(8px);
 }
 
 .white-circle-outside:hover {
     transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+[data-theme="light"] .white-circle-outside {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.6);
+    box-shadow: none;
+}
+
+[data-theme="light"] .white-circle-outside:hover {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.2);
+    color: rgba(0, 0, 0, 0.85);
 }
 
 .prompt-form {
@@ -118,15 +135,32 @@
 .white-circle-inside {
     width: 40px;
     height: 40px;
-    background: white !important;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     cursor: pointer;
-    border: none;
     flex-shrink: 0;
+    background: white !important;
+    border: none;
+    color: black;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.white-circle-inside:hover {
+    background: #f0f0f0 !important;
+    transform: scale(1.05);
+}
+
+[data-theme="light"] .white-circle-inside {
+    background: #111 !important;
+    color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .white-circle-inside:hover {
+    background: #000 !important;
+    transform: scale(1.05);
 }
 
 .voice-icon-custom.small {

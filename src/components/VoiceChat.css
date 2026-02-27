@@ -74,6 +74,19 @@
     transform: scale(1.05);
 }
 
+[data-theme="light"] .close-voice {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="light"] .close-voice:hover {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.2);
+    color: rgba(0, 0, 0, 0.85);
+    transform: scale(1.05);
+}
+
 .voice-content {
     display: flex;
     flex-direction: column;
@@ -201,6 +214,44 @@
     border-color: rgba(255, 255, 255, 0.15);
     color: rgba(255, 255, 255, 0.7);
     animation: initializing-spin 1.5s linear infinite;
+}
+
+[data-theme="light"] .liquid-bubble {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: rgba(0, 0, 0, 0.7);
+    box-shadow:
+        0 0 60px rgba(0, 0, 0, 0.3),
+        inset 0 0 30px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .liquid-bubble.listening {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.3);
+    color: rgba(0, 0, 0, 0.9);
+    box-shadow:
+        0 0 80px rgba(0, 0, 0, 0.15),
+        inset 0 0 30px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .liquid-bubble.speaking {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.3);
+    color: rgba(0, 0, 0, 0.9);
+    box-shadow:
+        0 0 80px rgba(0, 0, 0, 0.2),
+        inset 0 0 30px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .liquid-bubble.thinking {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.2);
+    color: rgba(0, 0, 0, 0.85);
+}
+
+[data-theme="light"] .liquid-bubble.initializing {
+    border-color: rgba(0, 0, 0, 0.15);
+    color: rgba(0, 0, 0, 0.6);
 }
 
 @keyframes initializing-spin {
@@ -389,6 +440,28 @@
     box-shadow: 0 0 40px rgba(255, 255, 255, 0.08);
 }
 
+[data-theme="light"] .mic-btn-large {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .mic-btn-large.listening {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.3);
+    color: rgba(0, 0, 0, 0.9);
+    box-shadow:
+        0 0 50px rgba(0, 0, 0, 0.15),
+        inset 0 0 20px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .mic-btn-large:hover {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.25);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+}
+
 .voice-hint {
     font-size: 0.85rem;
     color: rgba(255, 255, 255, 0.4);
@@ -410,6 +483,42 @@
     font-size: 0.9rem;
     margin-top: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Light theme support for voice elements */
+[data-theme="light"] .voice-status-badge {
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.6);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .voice-status-badge.listening {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.2);
+    color: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="light"] .voice-status-badge.thinking {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="light"] .voice-status-badge.speaking {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.2);
+    color: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="light"] .voice-status-badge.initializing {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="light"] .user-text {
+    color: rgba(0, 0, 0, 0.9);
+    text-shadow: none;
 }
 
 /* Mobile responsive */

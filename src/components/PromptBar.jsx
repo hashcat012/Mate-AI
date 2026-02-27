@@ -134,7 +134,7 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
 
             <div className="prompt-controls-wrapper">
                 <label className="white-circle-outside">
-                    <Plus size={22} color="black" />
+                    <Plus size={22} />
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -176,7 +176,7 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
                                     className="white-circle-inside"
                                     onClick={() => setVoiceMode(true)}
                                 >
-                                    <AudioLines size={20} color="black" />
+                                    <AudioLines size={20} />
                                 </motion.button>
                             ) : (
                                 <motion.button
@@ -187,7 +187,7 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
                                     type="submit"
                                     className="white-circle-inside"
                                 >
-                                    <ArrowUp size={20} color="black" />
+                                    <ArrowUp size={20} />
                                 </motion.button>
                             )}
                         </AnimatePresence>

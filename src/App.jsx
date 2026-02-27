@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore';
@@ -91,7 +91,7 @@ function App() {
   // Settings state
   const [persona, setPersona] = useState(() => {
     const saved = localStorage.getItem('mate_ai_persona');
-    return saved ? JSON.parse(saved) : { id: 'normal', name: 'Normal', prompt: 'Sen Mate AI\'sın — yardımsever, zeki ve dürüst bir yapay zeka asistanısın. Kullanıcıların sorularını, isteklerini ve konuşmalarını doğal bir şekilde yanıtla. Genel bilgi, tavsiye, analiz, yaratıcı yazarlık, dil, matematik, bilim, tarih ve daha fazlası dahil her konuda yardımcı ol. Kullanıcı açıkça kod yazmanı, uygulama veya program oluşturmanı istemediği sürece kod yazma. Sadece sohbet et, açıkla ve yardımcı ol. Eğer kullanıcı kim olduğunu sorarsa, Mate AI olduğunu ve Groq altyapısı üzerinde çalışan bir yapay zeka asistanı olduğunu söyle. Yanıtların kısa, net ve kullanıcıya faydalı olsun.' };
+    return saved ? JSON.parse(saved) : { id: 'normal', name: 'Normal', prompt: 'Sen Mate AI\'sın — yardımsever, zeki ve dürüst bir yapay zeka asistanısın. Kullanıcıların sorularını, isteklerini ve konuşmalarını doğal bir şekilde yanıtla. Genel bilgi, tavsiye, analiz, yaratıcı yazarlık, dil, matematik, bilim, tarih ve daha fazlası dahil her konuda yardımcı ol. Kullanıcı açıkça kod yazmanı, uygulama veya program oluşturmanı istemediği sürece kod yazma. Sadece sohbet et, açıkla ve yardımcı ol. Eğer kullanıcı kim olduğunu sorarsa, Mate AI olduğunu ve gelişmiş bir yapay zeka asistanı olduğunu söyle. Yanıtların kısa, net ve kullanıcıya faydalı olsun.' };
   });
 
   const [language, setLanguage] = useState(() => {
@@ -105,6 +105,10 @@ function App() {
 
   const [apiKey, setApiKey] = useState(() => {
     return localStorage.getItem('mate_ai_api_key') || '';
+  });
+
+  const [provider, setProvider] = useState(() => {
+    return localStorage.getItem('mate_ai_provider') || 'groq';
   });
 
   const chatIdRef = useRef(null);
@@ -174,7 +178,7 @@ function App() {
     }]);
 
     // Pass attachments to AI for vision processing
-    const aiText = await getAICompletion(aiMessages, attachments, apiKey).catch(e => "Hata: " + e.message);
+    const aiText = await getAICompletion(aiMessages, attachments, apiKey, provider).catch(e => "Hata: " + e.message);
     setMessages(prev => [...prev, { text: aiText, sender: 'ai', timestamp: new Date() }]);
 
     // Auto-open code editor if response contains code blocks
@@ -213,7 +217,7 @@ function App() {
         const titleResponse = await getAICompletion([
           { role: 'system', content: 'Sadece 2-4 kelimelik kısa bir başlık yaz. Başka hiçbir şey ekleme.' },
           { role: 'user', content: userText }
-        ], [], apiKey);
+        ], [], apiKey, provider);
         const title = titleResponse?.trim().replace(/^"|"$/g, '').slice(0, 50) || userText.slice(0, 35);
         const ref = await addDoc(collection(db, 'chats'), {
           userId: user.uid,
@@ -254,7 +258,7 @@ function App() {
         content: m.text
       }))
     ];
-    const newAiText = await getAICompletion(history, [], apiKey).catch(e => 'Hata: ' + e.message);
+    const newAiText = await getAICompletion(history, [], apiKey, provider).catch(e => 'Hata: ' + e.message);
     setMessages(prev => {
       const updated = [...prev];
       updated.splice(aiMsgIndex, 0, { text: newAiText, sender: 'ai', timestamp: new Date() });
@@ -293,7 +297,7 @@ function App() {
     }
   };
 
-  const handleSaveSettings = ({ persona: newPersona, language: newLang, theme: newTheme, apiKey: newApiKey }) => {
+  const handleSaveSettings = useCallback(({ persona: newPersona, language: newLang, theme: newTheme, apiKey: newApiKey, provider: newProvider }) => {
     setPersona(newPersona);
     setLanguage(newLang);
     if (newTheme) {
@@ -308,9 +312,13 @@ function App() {
         localStorage.removeItem('mate_ai_api_key');
       }
     }
+    if (newProvider !== undefined) {
+      setProvider(newProvider);
+      localStorage.setItem('mate_ai_provider', newProvider);
+    }
     localStorage.setItem('mate_ai_persona', JSON.stringify(newPersona));
     localStorage.setItem('mate_ai_language', newLang);
-  };
+  }, []);
 
   if (loading) return <div className="loading-screen">Mate AI</div>;
 
@@ -389,6 +397,7 @@ function App() {
               currentLanguage={language}
               currentTheme={theme}
               currentApiKey={apiKey}
+              currentProvider={provider}
               onSaveSettings={handleSaveSettings}
               onClose={() => setShowProfile(false)}
             />
@@ -436,6 +445,7 @@ function App() {
             persona={persona}
             language={language}
             apiKey={apiKey}
+            provider={provider}
             onSend={handleVoiceSync}
             onClose={() => setVoiceMode(false)}
           />

@@ -124,7 +124,7 @@
 
 .chat-options-menu {
     position: absolute;
-    right: 0;
+    left: 0;
     top: 100%;
     z-index: 100;
     width: 160px;

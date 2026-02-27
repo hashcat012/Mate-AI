@@ -80,9 +80,27 @@
   border-color: rgba(255, 255, 255, 0.2);
 }
 
+[data-theme="light"] .icon-btn {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.6);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .icon-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.85);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
 .icon-btn.active {
   background: rgba(139, 92, 246, 0.15);
   color: #a78bfa;
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+[data-theme="light"] .icon-btn.active {
+  background: rgba(139, 92, 246, 0.15);
+  color: #7c3aed;
   border-color: rgba(139, 92, 246, 0.3);
 }
 
@@ -105,6 +123,10 @@
 
 .ghost-btn:hover {
   background: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme="light"] .ghost-btn:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
 }
 
 .incognito-badge {

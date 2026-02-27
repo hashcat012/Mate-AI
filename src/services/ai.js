@@ -1,5 +1,11 @@
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const GROK_URL = "https://api.x.ai/v1/chat/completions";
+const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
+const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
 // Convert file to base64
 const fileToBase64 = (file) => {
@@ -16,10 +22,69 @@ const isImageFile = (file) => {
     return file && file.type && file.type.startsWith('image/');
 };
 
-export const getAICompletion = async (messages, attachments = [], customApiKey = null) => {
-    const apiKey = customApiKey || GROQ_API_KEY;
+export const getAICompletion = async (messages, attachments = [], customApiKey = null, provider = 'groq') => {
+    let apiKey = customApiKey;
+    let baseUrl;
+    let defaultModel;
+    let visionModel;
+    let providerName;
+
+    // Configure based on provider
+    switch (provider) {
+        case 'openai':
+            baseUrl = OPENAI_URL;
+            apiKey = apiKey || import.meta.env.VITE_OPENAI_API_KEY;
+            defaultModel = "gpt-4o-mini";
+            visionModel = "gpt-4o";
+            providerName = "OpenAI";
+            break;
+        case 'openrouter':
+            baseUrl = OPENROUTER_URL;
+            apiKey = apiKey || import.meta.env.VITE_OPENROUTER_API_KEY;
+            defaultModel = "google/gemini-2.0-flash-001";
+            visionModel = "google/gemini-2.0-flash-001";
+            providerName = "OpenRouter";
+            break;
+        case 'gemini':
+            baseUrl = GEMINI_URL;
+            apiKey = apiKey || import.meta.env.VITE_GEMINI_API_KEY;
+            defaultModel = "gemini-2.0-flash";
+            visionModel = "gemini-2.0-flash";
+            providerName = "Gemini";
+            break;
+        case 'grok':
+            baseUrl = GROK_URL;
+            apiKey = apiKey || import.meta.env.VITE_GROK_API_KEY;
+            defaultModel = "grok-2-1212";
+            visionModel = "grok-2-vision-1212";
+            providerName = "Grok";
+            break;
+        case 'deepseek':
+            baseUrl = DEEPSEEK_URL;
+            apiKey = apiKey || import.meta.env.VITE_DEEPSEEK_API_KEY;
+            defaultModel = "deepseek-chat";
+            visionModel = "deepseek-chat";
+            providerName = "DeepSeek";
+            break;
+        case 'claude':
+            baseUrl = ANTHROPIC_URL;
+            apiKey = apiKey || import.meta.env.VITE_CLAUDE_API_KEY;
+            defaultModel = "claude-3-5-haiku-20241022";
+            visionModel = "claude-3-5-haiku-20241022";
+            providerName = "Claude";
+            break;
+        case 'groq':
+        default:
+            baseUrl = GROQ_URL;
+            apiKey = apiKey || GROQ_API_KEY;
+            defaultModel = "llama-3.3-70b-versatile";
+            visionModel = "meta-llama/llama-4-maverick-17b-128e-instruct";
+            providerName = "Groq";
+            break;
+    }
+
     if (!apiKey) {
-        return "Hata: API anahtarı bulunamadı. Ayarlardan API anahtarı ekleyin.";
+        return `Hata: ${providerName} API anahtarı bulunamadı. Ayarlardan API anahtarı ekleyin.`;
     }
 
     // Process attachments - convert images to base64
@@ -74,7 +139,7 @@ export const getAICompletion = async (messages, attachments = [], customApiKey =
 
         // Use vision model if images present
         const body = {
-            model: imageContents.length > 0 ? "meta-llama/llama-4-maverick-17b-128e-instruct" : "llama-3.3-70b-versatile",
+            model: imageContents.length > 0 ? visionModel : defaultModel,
             messages: formattedMessages.map((m, i) => {
                 // Last user message with attachments
                 if (i === formattedMessages.length - 1 && m.role === 'user') {
@@ -89,23 +154,79 @@ export const getAICompletion = async (messages, attachments = [], customApiKey =
             max_tokens: 8192
         };
 
-        return sendRequest(body, apiKey);
+        // Add Anthropic-specific headers
+        const headers = {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+        };
+
+        if (provider === 'claude') {
+            headers["x-api-key"] = apiKey;
+            // Anthropic uses a different format
+            const claudeMessages = formattedMessages.map(m => ({
+                role: m.role,
+                content: m.content
+            }));
+            // Convert to Anthropic format
+            body.messages = claudeMessages;
+            body.max_tokens = 4096;
+            return sendAnthropicRequest(body, apiKey, providerName);
+        }
+
+        return sendRequest(body, apiKey, baseUrl, providerName);
     }
 
     // Regular text-only request
     const body = {
-        model: "llama-3.3-70b-versatile",
+        model: defaultModel,
         messages: formattedMessages,
         temperature: 0.7,
         max_tokens: 8192
     };
 
-    return sendRequest(body, apiKey);
+    // Anthropic uses different endpoint
+    if (provider === 'claude') {
+        const claudeMessages = formattedMessages.map(m => ({
+            role: m.role,
+            content: m.content
+        }));
+        body.messages = claudeMessages;
+        body.max_tokens = 4096;
+        return sendAnthropicRequest(body, apiKey, providerName);
+    }
+
+    return sendRequest(body, apiKey, baseUrl, providerName);
 };
 
-const sendRequest = async (body, apiKey) => {
+const sendAnthropicRequest = async (body, apiKey, providerName) => {
     try {
-        const res = await fetch(GROQ_URL, {
+        const res = await fetch(ANTHROPIC_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": apiKey,
+                "anthropic-version": "2023-06-01"
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            console.error("[AI] Error:", data);
+            return `Hata (${res.status}): ${data?.error?.message || 'bilinmiyor'}`;
+        }
+
+        return data.content[0].text;
+    } catch (e) {
+        console.error("[AI] Fetch Error:", e);
+        return `Bağlantı hatası: ${providerName} API'ye ulaşılamıyor.`;
+    }
+};
+
+const sendRequest = async (body, apiKey, baseUrl, providerName) => {
+    try {
+        const res = await fetch(baseUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -124,6 +245,6 @@ const sendRequest = async (body, apiKey) => {
         return data.choices[0].message.content;
     } catch (e) {
         console.error("[AI] Fetch Error:", e);
-        return "Bağlantı hatası: Groq API'ye ulaşılamıyor.";
+        return `Bağlantı hatası: ${providerName} API'ye ulaşılamıyor.`;
     }
 };
