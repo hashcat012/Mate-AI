@@ -53,38 +53,38 @@
     position: absolute;
     top: 40px;
     right: 40px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.7);
-    width: 54px;
-    height: 54px;
-    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.8);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
-    backdrop-filter: blur(10px);
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .close-voice:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
     color: white;
-    transform: scale(1.05);
 }
 
 [data-theme="light"] .close-voice {
-    background: rgba(0, 0, 0, 0.06);
-    border-color: rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: rgba(0, 0, 0, 0.7);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
 [data-theme="light"] .close-voice:hover {
     background: rgba(0, 0, 0, 0.1);
     border-color: rgba(0, 0, 0, 0.2);
-    color: rgba(0, 0, 0, 0.85);
-    transform: scale(1.05);
+    color: rgba(0, 0, 0, 0.9);
 }
 
 .voice-content {
@@ -519,6 +519,17 @@
 [data-theme="light"] .user-text {
     color: rgba(0, 0, 0, 0.9);
     text-shadow: none;
+}
+
+[data-theme="light"] .voice-overlay {
+    background: linear-gradient(180deg, #f0f4f8 0%, #ffffff 50%, #f0f4f8 100%);
+}
+
+[data-theme="light"] .voice-overlay::before {
+    background:
+        radial-gradient(circle at 20% 20%, rgba(0, 0, 0, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.02) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.02) 0%, transparent 50%);
 }
 
 /* Mobile responsive */

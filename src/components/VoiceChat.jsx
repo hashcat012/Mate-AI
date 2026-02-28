@@ -286,7 +286,18 @@ const VoiceChat = ({ messages, persona, language, apiKey, provider, onSend, onCl
             transition={{ duration: 0.3 }}
         >
             <div className="voice-container">
-                <button className="close-voice" onClick={onClose} title="Kapat"><X size={32} /></button>
+                <motion.button
+                    className="close-voice liquid-glass"
+                    onClick={() => {
+                        if (navigator.vibrate) navigator.vibrate(50);
+                        onClose();
+                    }}
+                    title="Kapat"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.85 }}
+                >
+                    <X size={28} />
+                </motion.button>
 
                 <div className="voice-content">
                     <div className="bubble-wrapper">
