@@ -127,7 +127,8 @@
     left: 0;
     top: 100%;
     z-index: 100;
-    width: 160px;
+    min-width: 160px;
+    width: max-content;
     padding: 8px;
     border-radius: 16px;
     display: flex;
@@ -148,6 +149,7 @@
     font-size: 0.85rem;
     cursor: pointer;
     transition: background 0.2s;
+    white-space: nowrap;
 }
 
 [data-theme="light"] .option-item {
