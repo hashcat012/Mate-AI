@@ -22,7 +22,7 @@ const isImageFile = (file) => {
     return file && file.type && file.type.startsWith('image/');
 };
 
-export const getAICompletion = async (messages, attachments = [], customApiKey = null, provider = 'groq') => {
+export const getAICompletion = async (messages, attachments = [], customApiKey = null, provider = 'groq', signal = null) => {
     let apiKey = customApiKey;
     let baseUrl;
     let defaultModel;
@@ -170,10 +170,10 @@ export const getAICompletion = async (messages, attachments = [], customApiKey =
             // Convert to Anthropic format
             body.messages = claudeMessages;
             body.max_tokens = 4096;
-            return sendAnthropicRequest(body, apiKey, providerName);
+            return sendAnthropicRequest(body, apiKey, providerName, signal);
         }
 
-        return sendRequest(body, apiKey, baseUrl, providerName);
+        return sendRequest(body, apiKey, baseUrl, providerName, signal);
     }
 
     // Regular text-only request
@@ -192,22 +192,25 @@ export const getAICompletion = async (messages, attachments = [], customApiKey =
         }));
         body.messages = claudeMessages;
         body.max_tokens = 4096;
-        return sendAnthropicRequest(body, apiKey, providerName);
+        return sendAnthropicRequest(body, apiKey, providerName, signal);
     }
 
-    return sendRequest(body, apiKey, baseUrl, providerName);
+    return sendRequest(body, apiKey, baseUrl, providerName, signal);
 };
 
-const sendAnthropicRequest = async (body, apiKey, providerName) => {
+const sendAnthropicRequest = async (body, apiKey, providerName, signal = null) => {
     try {
         const res = await fetch(ANTHROPIC_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "x-api-key": apiKey,
-                "anthropic-version": "2023-06-01"
+                "anthropic-version": "2023-06-01",
+                "HTTP-Referer": "https://mate-ai.app",
+                "X-Title": "Mate AI"
             },
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            signal: signal || undefined
         });
 
         const data = await res.json();
@@ -219,32 +222,61 @@ const sendAnthropicRequest = async (body, apiKey, providerName) => {
 
         return data.content[0].text;
     } catch (e) {
+        if (e.name === 'AbortError') throw e;
         console.error("[AI] Fetch Error:", e);
         return `Bağlantı hatası: ${providerName} API'ye ulaşılamıyor.`;
     }
 };
 
-const sendRequest = async (body, apiKey, baseUrl, providerName) => {
+const sendRequest = async (body, apiKey, baseUrl, providerName, signal = null) => {
     try {
-        const res = await fetch(baseUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiKey}`
-            },
-            body: JSON.stringify(body)
-        });
+        const headers = {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+            "HTTP-Referer": window.location.href || "https://mate-ai.app",
+            "X-Title": "Mate AI"
+        };
 
-        const data = await res.json();
+        // Combine user abort signal with a 60-second timeout
+        const timeoutController = new AbortController();
+        const timeoutId = setTimeout(() => timeoutController.abort(), 60000);
 
-        if (!res.ok) {
-            console.error("[AI] Error:", data);
-            return `Hata (${res.status}): ${data?.error?.message || 'bilinmiyor'}`;
+        // Merge signals: abort if either user stops OR timeout fires
+        let combinedSignal;
+        if (signal && typeof AbortSignal.any === 'function') {
+            combinedSignal = AbortSignal.any([signal, timeoutController.signal]);
+        } else if (signal) {
+            combinedSignal = signal;
+        } else {
+            combinedSignal = timeoutController.signal;
         }
 
-        return data.choices[0].message.content;
+        try {
+            const res = await fetch(baseUrl, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify(body),
+                signal: combinedSignal
+            });
+
+            clearTimeout(timeoutId);
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                console.error("[AI] Error:", data);
+                return `Hata (${res.status}): ${data?.error?.message || 'bilinmiyor'} (${providerName})`;
+            }
+
+            return data.choices[0].message.content;
+        } catch (e) {
+            clearTimeout(timeoutId);
+            throw e;
+        }
     } catch (e) {
+        if (e.name === 'AbortError') throw e;
         console.error("[AI] Fetch Error:", e);
-        return `Bağlantı hatası: ${providerName} API'ye ulaşılamıyor.`;
+        return `Bağlantı hatası: ${providerName} API'ye ulaşılamıyor. (İnternet bağlantınızı kontrol edin)`;
     }
 };
+

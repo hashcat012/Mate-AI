@@ -9,24 +9,59 @@ import {
 } from 'lucide-react';
 
 // ── Typewriter Component ────────────────────────────────────────────────
-const TypewriterText = ({ text, onComplete }) => {
+const TypewriterText = ({ text, onComplete, animSpeed, stopRef }) => {
     const [displayedText, setDisplayedText] = useState('');
     const [isComplete, setIsComplete] = useState(false);
     const intervalRef = useRef(null);
+    const isStoppedRef = useRef(false);
+    const currentTextRef = useRef('');
+
+    // Güncel displayedText değerini ref'te tut
+    useEffect(() => {
+        currentTextRef.current = displayedText;
+    }, [displayedText]);
 
     useEffect(() => {
         // Reset when text changes
         setDisplayedText('');
         setIsComplete(false);
+        isStoppedRef.current = false;
 
         let currentIndex = 0;
-        // Random speed between 15-35ms for natural feel
-        const getRandomSpeed = () => Math.floor(Math.random() * 20) + 15;
+        // animSpeed: 1=very fast(2ms), 50=normal(20ms), 100=very slow(80ms)
+        const speedVal = animSpeed ?? 20;
+        const getBaseSpeed = () => {
+            // Map 1-100 => 2-80ms
+            return Math.round(2 + (speedVal - 1) * (78 / 99));
+        };
+        const getRandomSpeed = () => {
+            const base = getBaseSpeed();
+            // ±20% random variation for natural feel
+            const variation = Math.floor(base * 0.2);
+            return base + Math.floor(Math.random() * (variation * 2 + 1)) - variation;
+        };
         let currentSpeed = getRandomSpeed();
 
+        // Expose stop function via ref
+        if (stopRef) {
+            stopRef.current = () => {
+                if (isStoppedRef.current || isComplete) return;
+                isStoppedRef.current = true;
+                if (intervalRef.current) {
+                    clearInterval(intervalRef.current);
+                }
+                // Mevcut gösterilen metni koru (tamamını değil)
+                setIsComplete(true);
+                // Anlık görünen metni geri gönder (ref'ten oku)
+                if (onComplete) onComplete(true, currentTextRef.current);
+            };
+        }
+
         intervalRef.current = setInterval(() => {
+            if (isStoppedRef.current) return;
             if (currentIndex < text.length) {
-                setDisplayedText(text.slice(0, currentIndex + 1));
+                const newText = text.slice(0, currentIndex + 1);
+                setDisplayedText(newText);
                 currentIndex++;
 
                 // Vary the speed occasionally for natural feel
@@ -36,7 +71,7 @@ const TypewriterText = ({ text, onComplete }) => {
             } else {
                 clearInterval(intervalRef.current);
                 setIsComplete(true);
-                if (onComplete) onComplete();
+                if (onComplete) onComplete(false, text);
             }
         }, currentSpeed);
 
@@ -45,7 +80,7 @@ const TypewriterText = ({ text, onComplete }) => {
                 clearInterval(intervalRef.current);
             }
         };
-    }, [text, onComplete]);
+    }, [text, onComplete, animSpeed, stopRef]);
 
     return (
         <>
@@ -202,12 +237,15 @@ const MessageActions = ({ text, onRegenerate, index, onOpenCodeEditor }) => {
 };
 
 // ── Main Chat Component ────────────────────────────────────────────────
-const Chat = ({ messages, isInitial, onRegenerate, onOpenCodeEditor }) => {
+const Chat = ({ messages, isInitial, onRegenerate, onOpenCodeEditor, animSpeed, isLoading, onTypingStart, onTypingComplete, stopTypingRef, onMessageTruncate }) => {
     const bottomRef = useRef(null);
     const [typingMessageId, setTypingMessageId] = useState(null);
     const [completedTyping, setCompletedTyping] = useState({});
     const prevMessagesLength = useRef(0);
     const animatedMessages = useRef(new Set());
+    const typewriterStopRef = useRef(null);
+    // Kesilmiş mesaj metinlerini sakla (parent state güncellenene kadar)
+    const [truncatedTexts, setTruncatedTexts] = useState({});
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -224,31 +262,63 @@ const Chat = ({ messages, isInitial, onRegenerate, onOpenCodeEditor }) => {
                 // Only animate if not already animated
                 if (lastMsg.sender === 'ai' && lastMsg.text && !animatedMessages.current.has(msgId)) {
                     setTypingMessageId(msgId);
+                    if (onTypingStart) onTypingStart();
                 }
             }
             prevMessagesLength.current = messages.length;
         }
-    }, [messages]);
+    }, [messages, onTypingStart]);
 
-    const handleTypingComplete = (msgId) => {
+    // Expose stop function via ref
+    useEffect(() => {
+        if (stopTypingRef) {
+            stopTypingRef.current = () => {
+                if (typewriterStopRef.current) {
+                    typewriterStopRef.current();
+                } else if (typingMessageId) {
+                    handleTypingComplete(typingMessageId, true);
+                }
+            };
+        }
+    }, [typingMessageId, stopTypingRef]);
+
+    const handleTypingComplete = (msgId, stopped = false, truncatedText = null) => {
         setCompletedTyping(prev => ({ ...prev, [msgId]: true }));
         animatedMessages.current.add(msgId);
+        setTypingMessageId(null);
+        if (onTypingComplete) onTypingComplete(stopped);
+        // Durdurulduysa ve kesilmiş metin varsa yerel state'e ve üst bileşene kaydet
+        if (stopped && truncatedText) {
+            setTruncatedTexts(prev => ({ ...prev, [msgId]: truncatedText }));
+            if (onMessageTruncate) {
+                onMessageTruncate(msgId, truncatedText);
+            }
+        }
     };
 
     if (isInitial && messages.length === 0) {
         return <div className="chat-messages-container"><div className="chat-messages-inner" /></div>;
     }
 
+    // Yükleniyorsa ve son mesaj kullanıcıdan ise, geçici AI mesajı ekle
+    const displayMessages = [...messages];
+    if (isLoading && messages.length > 0 && messages[messages.length - 1].sender === 'user') {
+        displayMessages.push({ sender: 'ai', text: '', id: 'loading-ai-msg', isLoading: true });
+    }
+
     return (
         <motion.div layout className="chat-messages-container">
             <div className="chat-messages-inner">
                 <AnimatePresence>
-                    {messages.map((msg, index) => {
+                    {displayMessages.map((msg, index) => {
                         const msgId = msg.id || `msg-${index}`;
+                        // Kesilmiş metin varsa onu kullan
+                        const displayText = truncatedTexts[msgId] || msg.text;
                         const isTyping = msg.sender === 'ai' && msgId === typingMessageId && !completedTyping[msgId];
                         const isLastAiMessage = msg.sender === 'ai' && index === messages.length - 1;
                         const wasAlreadyAnimated = animatedMessages.current.has(msgId);
-                        const shouldType = isLastAiMessage && !completedTyping[msgId] && !wasAlreadyAnimated;
+                        // Kesilmiş metin varsa typewriter'ı tekrar çalıştırma
+                        const shouldType = isLastAiMessage && !completedTyping[msgId] && !wasAlreadyAnimated && !truncatedTexts[msgId];
 
                         return (
                             <motion.div
@@ -281,13 +351,24 @@ const Chat = ({ messages, isInitial, onRegenerate, onOpenCodeEditor }) => {
                                         </div>
                                     )}
 
+                                    {/* Loading animation for AI when waiting for response */}
+                                    {msg.isLoading && (
+                                        <div className="typing-indicator">
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </div>
+                                    )}
+
                                     {/* Display text content with typewriter for AI messages */}
-                                    {msg.text && !msg.text.match(/^\[.*\]$/) && (
+                                    {displayText && !displayText.match(/^\[.*\]$/) && (
                                         shouldType && msg.sender === 'ai' ? (
                                             <div className="message-text typewriter">
                                                 <TypewriterText
-                                                    text={msg.text.replace(/\[.*?\]/g, '').trim()}
-                                                    onComplete={() => handleTypingComplete(msgId)}
+                                                    text={displayText.replace(/\[.*?\]/g, '').trim()}
+                                                    onComplete={(stopped, truncatedText) => handleTypingComplete(msgId, stopped, truncatedText)}
+                                                    animSpeed={animSpeed}
+                                                    stopRef={typewriterStopRef}
                                                 />
                                             </div>
                                         ) : (
@@ -307,7 +388,7 @@ const Chat = ({ messages, isInitial, onRegenerate, onOpenCodeEditor }) => {
                                                     }
                                                 }}
                                             >
-                                                {msg.text.replace(/\[.*?\]/g, '').trim()}
+                                                {displayText.replace(/\[.*?\]/g, '').trim()}
                                             </ReactMarkdown>
                                         )
                                     )}
@@ -315,7 +396,7 @@ const Chat = ({ messages, isInitial, onRegenerate, onOpenCodeEditor }) => {
                                     {/* Action bar only for AI messages - show after typing complete */}
                                     {msg.sender === 'ai' && (!shouldType || completedTyping[msgId]) && (
                                         <MessageActions
-                                            text={msg.text}
+                                            text={displayText}
                                             index={index}
                                             onRegenerate={onRegenerate}
                                             onOpenCodeEditor={onOpenCodeEditor}

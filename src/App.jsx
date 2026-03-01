@@ -81,12 +81,21 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [isInitial, setIsInitial] = useState(true);
   const [voiceMode, setVoiceMode] = useState(false);
+  const [isWaitingForAI, setIsWaitingForAI] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isIncognito, setIsIncognito] = useState(false);
   const [codeEditorOpen, setCodeEditorOpen] = useState(false);
   const [codeFiles, setCodeFiles] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [animSpeed, setAnimSpeed] = useState(() => {
+    const saved = localStorage.getItem('mate_ai_anim_speed');
+    return saved ? parseInt(saved) : 20;
+  });
+  const abortControllerRef = useRef(null);
+  const stopTypingRef = useRef(null);
 
   // Settings state
   const [persona, setPersona] = useState(() => {
@@ -140,8 +149,50 @@ function App() {
     setIsIncognito(false);
   };
 
+  const handleStop = useCallback(() => {
+    // Stop API request if loading
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    // Stop typewriter animation if typing
+    if (stopTypingRef.current) {
+      stopTypingRef.current();
+    }
+    setIsLoading(false);
+  }, []);
+
+  const handleTypingStart = useCallback(() => {
+    setIsTyping(true);
+  }, []);
+
+  const handleTypingComplete = useCallback((stopped) => {
+    setIsTyping(false);
+  }, []);
+
+  const handleMessageTruncate = useCallback((msgId, truncatedText) => {
+    // Mesajı kesilmiş haliyle güncelle
+    setMessages(prev => {
+      const index = parseInt(msgId.replace('msg-', ''));
+      if (isNaN(index) || index < 0 || index >= prev.length) return prev;
+
+      const newMessages = [...prev];
+      if (newMessages[index] && newMessages[index].sender === 'ai') {
+        newMessages[index] = { ...newMessages[index], text: truncatedText };
+      }
+      return newMessages;
+    });
+  }, []);
+
   const handleSendMessage = async (text, attachments = []) => {
     if (!user) { setShowAuth(true); return; }
+    if (isLoading) return;
+
+    // Set loading state & abort controller immediately — before any async work
+    // so isLoading is true in the same React render that clears the input
+    abortControllerRef.current = new AbortController();
+    setIsLoading(true);
+    setIsWaitingForAI(true);
 
     const currentMessages = messages;
     const isFirst = !chatIdRef.current && !isIncognito;
@@ -177,19 +228,39 @@ function App() {
       })) : undefined
     }]);
 
-    // Pass attachments to AI for vision processing
-    const aiText = await getAICompletion(aiMessages, attachments, apiKey, provider).catch(e => "Hata: " + e.message);
-    setMessages(prev => [...prev, { text: aiText, sender: 'ai', timestamp: new Date() }]);
+    try {
+      // Pass attachments to AI for vision processing
+      const aiText = await getAICompletion(aiMessages, attachments, apiKey, provider, abortControllerRef.current.signal)
+        .catch(e => {
+          if (e.name === 'AbortError' || e.message?.includes('abort') || e.message?.includes('cancel')) {
+            return null;
+          }
+          return "Hata: " + e.message;
+        });
 
-    // Auto-open code editor if response contains code blocks
-    const files = parseCodeBlocks(aiText);
-    if (files.length > 0) {
-      setCodeFiles(files);
-      setCodeEditorOpen(true);
-    }
+      setIsWaitingForAI(false);
 
-    if (!isIncognito) {
-      saveToFirestore(isFirst, messageContent, aiText, currentMessages);
+      if (aiText === null) {
+        // Stopped by user
+        return;
+      }
+
+      setMessages(prev => [...prev, { text: aiText, sender: 'ai', timestamp: new Date() }]);
+
+      // Auto-open code editor if response contains code blocks
+      const files = parseCodeBlocks(aiText);
+      if (files.length > 0) {
+        setCodeFiles(files);
+        setCodeEditorOpen(true);
+      }
+
+      if (!isIncognito) {
+        saveToFirestore(isFirst, messageContent, aiText, currentMessages);
+      }
+    } finally {
+      setIsLoading(false);
+      setIsWaitingForAI(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -297,7 +368,7 @@ function App() {
     }
   };
 
-  const handleSaveSettings = useCallback(({ persona: newPersona, language: newLang, theme: newTheme, apiKey: newApiKey, provider: newProvider }) => {
+  const handleSaveSettings = useCallback(({ persona: newPersona, language: newLang, theme: newTheme, apiKey: newApiKey, provider: newProvider, animSpeed: newAnimSpeed }) => {
     setPersona(newPersona);
     setLanguage(newLang);
     if (newTheme) {
@@ -315,6 +386,10 @@ function App() {
     if (newProvider !== undefined) {
       setProvider(newProvider);
       localStorage.setItem('mate_ai_provider', newProvider);
+    }
+    if (newAnimSpeed !== undefined) {
+      setAnimSpeed(newAnimSpeed);
+      localStorage.setItem('mate_ai_anim_speed', newAnimSpeed.toString());
     }
     localStorage.setItem('mate_ai_persona', JSON.stringify(newPersona));
     localStorage.setItem('mate_ai_language', newLang);
@@ -398,19 +473,31 @@ function App() {
               currentTheme={theme}
               currentApiKey={apiKey}
               currentProvider={provider}
+              currentAnimSpeed={animSpeed}
               onSaveSettings={handleSaveSettings}
               onClose={() => setShowProfile(false)}
             />
           )}
         </AnimatePresence>
 
-        <Chat messages={messages} isInitial={isInitial} onRegenerate={handleRegenerate} onOpenCodeEditor={(text) => {
-          const files = parseCodeBlocks(text);
-          if (files.length > 0) {
-            setCodeFiles(files);
-            setCodeEditorOpen(true);
-          }
-        }} />
+        <Chat
+          messages={messages}
+          isInitial={isInitial}
+          onRegenerate={handleRegenerate}
+          animSpeed={animSpeed}
+          isLoading={isWaitingForAI}
+          onTypingStart={handleTypingStart}
+          onTypingComplete={handleTypingComplete}
+          stopTypingRef={stopTypingRef}
+          onMessageTruncate={handleMessageTruncate}
+          onOpenCodeEditor={(text) => {
+            const files = parseCodeBlocks(text);
+            if (files.length > 0) {
+              setCodeFiles(files);
+              setCodeEditorOpen(true);
+            }
+          }}
+        />
 
       </motion.main>
 
@@ -435,7 +522,7 @@ function App() {
           alignItems: 'flex-end',
         }}
       >
-        <PromptBar onSend={handleSendMessage} isInitial={isInitial} setVoiceMode={setVoiceMode} />
+        <PromptBar onSend={handleSendMessage} isInitial={isInitial} setVoiceMode={setVoiceMode} isLoading={isLoading || isTyping} onStop={handleStop} />
       </motion.div>
 
       <AnimatePresence>

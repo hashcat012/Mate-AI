@@ -301,6 +301,7 @@ const VoiceChat = ({ messages, persona, language, apiKey, provider, onSend, onCl
 
                 <div className="voice-content">
                     <div className="bubble-wrapper">
+
                         <motion.div
                             className={`liquid-bubble liquid-glass ${status}`}
                             animate={{

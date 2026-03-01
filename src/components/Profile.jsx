@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Trash2, LogOut, Sparkles, ChevronDown, Sun, Moon } from 'lucide-react';
+import { X, User, Trash2, LogOut, Sparkles, ChevronDown, Sun, Moon, Gauge } from 'lucide-react';
 import { updateProfile, deleteUser, signOut } from 'firebase/auth';
 
 const personas = [
@@ -28,7 +28,7 @@ const providers = [
     { id: 'claude', name: 'Claude' }
 ];
 
-const Profile = ({ user, currentPersona, currentLanguage, currentTheme, currentApiKey, currentProvider, onSaveSettings, onClose }) => {
+const Profile = ({ user, currentPersona, currentLanguage, currentTheme, currentApiKey, currentProvider, currentAnimSpeed, onSaveSettings, onClose }) => {
     const [displayName, setDisplayName] = useState(user?.displayName || '');
     const [selectedPersona, setSelectedPersona] = useState(currentPersona?.id || 'normal');
     const [customPrompt, setCustomPrompt] = useState(currentPersona?.id === 'custom' ? currentPersona.prompt : '');
@@ -37,6 +37,7 @@ const Profile = ({ user, currentPersona, currentLanguage, currentTheme, currentA
     const [selectedProvider, setSelectedProvider] = useState(currentProvider || 'groq');
     const [useCustomApi, setUseCustomApi] = useState(!!currentApiKey);
     const [customApiKey, setCustomApiKey] = useState(currentApiKey || '');
+    const [animSpeed, setAnimSpeed] = useState(currentAnimSpeed ?? 20);
     const [providerOpen, setProviderOpen] = useState(false);
     const [langOpen, setLangOpen] = useState(false);
     const [personaOpen, setPersonaOpen] = useState(false);
@@ -58,9 +59,10 @@ const Profile = ({ user, currentPersona, currentLanguage, currentTheme, currentA
             language: selectedLanguage,
             theme: selectedTheme,
             apiKey: apiKeyToSave,
-            provider: selectedProvider
+            provider: selectedProvider,
+            animSpeed
         });
-    }, [selectedPersona, customPrompt, selectedLanguage, selectedTheme, selectedProvider, useCustomApi, customApiKey, onSaveSettings]);
+    }, [selectedPersona, customPrompt, selectedLanguage, selectedTheme, selectedProvider, useCustomApi, customApiKey, animSpeed, onSaveSettings]);
 
     // Debounced save for displayName to Firebase
     useEffect(() => {
@@ -303,6 +305,32 @@ const Profile = ({ user, currentPersona, currentLanguage, currentTheme, currentA
                                 </motion.div>
                             )}
                         </AnimatePresence>
+                    </div>
+
+                    {/* Animasyon Hızı */}
+                    <div className="profile-section-group">
+                        <label>Yazım Animasyon Hızı</label>
+                        <div className="anim-speed-wrapper">
+                            <div className="anim-speed-header">
+                                <Gauge size={14} />
+                                <span className="anim-speed-label-text">Hız Seviyesi</span>
+                                <span className="anim-speed-badge">
+                                    {animSpeed <= 20 ? 'Çok Hızlı' : animSpeed <= 40 ? 'Hızlı' : animSpeed <= 60 ? 'Normal' : animSpeed <= 80 ? 'Yavaş' : 'Çok Yavaş'}
+                                </span>
+                            </div>
+                            <div className="anim-speed-track">
+                                <span className="anim-speed-hint">Hızlı</span>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="100"
+                                    value={animSpeed}
+                                    onChange={e => setAnimSpeed(parseInt(e.target.value))}
+                                    className="anim-speed-range"
+                                />
+                                <span className="anim-speed-hint">Yavaş</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Persona Selector - Pill Style */}

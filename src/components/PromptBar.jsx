@@ -2,17 +2,26 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ArrowUp, AudioLines, X, FileText } from 'lucide-react';
 
-const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
+const PromptBar = ({ onSend, isInitial, setVoiceMode, isLoading, onStop }) => {
     const [input, setInput] = useState('');
     const [attachments, setAttachments] = useState([]);
     const fileInputRef = useRef(null);
+    const textareaRef = useRef(null);
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (isLoading) {
+            onStop && onStop();
+            return;
+        }
         if (input.trim() || attachments.length > 0) {
             onSend(input, attachments);
             setInput('');
             setAttachments([]);
+            // Reset textarea height
+            if (textareaRef.current) {
+                textareaRef.current.style.height = 'auto';
+            }
         }
     };
 
@@ -41,13 +50,12 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
         });
     };
 
-    // Vertical: when initial, center vertically; when not initial, stay at bottom
-    // The wrapper is position:fixed at bottom:0, so we animate translateY to lift up
-    // When initial: move up by (50vh - 32px - element_height/2) ≈ calc(50vh - 32px - 50%)
-    // When not initial: stay at bottom (y = 0, wrapper handles bottom:32px via padding)
     const promptBarY = isInitial
         ? 'calc(-50vh + 32px + 50%)'
         : '0px';
+
+    // Button state: stop > send > voice
+    const buttonState = isLoading ? 'stop' : (input.length > 0 || attachments.length > 0) ? 'send' : 'voice';
 
     return (
         <motion.div
@@ -147,11 +155,11 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
 
                 <form onSubmit={handleSubmit} className="prompt-form liquid-glass">
                     <textarea
+                        ref={textareaRef}
                         placeholder="Mate AI'a bir şeyler sor..."
                         value={input}
                         onChange={(e) => {
                             setInput(e.target.value);
-                            // Auto-resize textarea
                             e.target.style.height = 'auto';
                             e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
                         }}
@@ -162,28 +170,47 @@ const PromptBar = ({ onSend, isInitial, setVoiceMode }) => {
                             }
                         }}
                         rows={1}
+                        disabled={isLoading}
                     />
 
                     <div className="inner-action-container">
                         <AnimatePresence mode="wait">
-                            {input.length === 0 && attachments.length === 0 ? (
+                            {buttonState === 'stop' && (
+                                <motion.button
+                                    key="stop"
+                                    type="button"
+                                    className="stop-circle-btn"
+                                    onClick={() => onStop && onStop()}
+                                    initial={{ scale: 0.7, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    exit={{ scale: 0.7, opacity: 0 }}
+                                    transition={{ duration: 0.15 }}
+                                    title="Durdur"
+                                >
+                                    <span className="stop-square" />
+                                </motion.button>
+                            )}
+                            {buttonState === 'voice' && (
                                 <motion.button
                                     key="voice"
                                     initial={{ scale: 0.7, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     exit={{ scale: 0.7, opacity: 0 }}
+                                    transition={{ duration: 0.15 }}
                                     type="button"
                                     className="white-circle-inside"
                                     onClick={() => setVoiceMode(true)}
                                 >
                                     <AudioLines size={20} />
                                 </motion.button>
-                            ) : (
+                            )}
+                            {buttonState === 'send' && (
                                 <motion.button
                                     key="send"
                                     initial={{ scale: 0.7, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     exit={{ scale: 0.7, opacity: 0 }}
+                                    transition={{ duration: 0.15 }}
                                     type="submit"
                                     className="white-circle-inside"
                                 >
